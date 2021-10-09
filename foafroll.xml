@@ -16,7 +16,7 @@
 			<foaf:name>Adam Young</foaf:name>
 			<foaf:weblog>
 				<foaf:Document rdf:about="http://adam.younglogic.com">
-					<dc:title>FreeIPA – Adam Young’s Web Log</dc:title>
+					<dc:title>FreeIPA – Adam Young's Web Log</dc:title>
 					<rdfs:seeAlso>
 						<rss:channel rdf:about="http://adam.younglogic.com/category/software/freeipa,kerberos,ldap/feed/" />
 					</rdfs:seeAlso>
@@ -28,8 +28,8 @@
 		<foaf:Agent>
 			<foaf:name>Alexander Bokovoy</foaf:name>
 			<foaf:weblog>
-				<foaf:Document rdf:about="https://vda.li/en/">
-					<dc:title>Far away to be identical</dc:title>
+				<foaf:Document rdf:about="">
+					<dc:title></dc:title>
 					<rdfs:seeAlso>
 						<rss:channel rdf:about="https://vda.li/en/freeipa.xml" />
 					</rdfs:seeAlso>
@@ -93,8 +93,8 @@
 		<foaf:Agent>
 			<foaf:name>Luc de Louw</foaf:name>
 			<foaf:weblog>
-				<foaf:Document rdf:about="https://blog.delouw.ch">
-					<dc:title>IPA – Luc de Louw's Blog</dc:title>
+				<foaf:Document rdf:about="">
+					<dc:title></dc:title>
 					<rdfs:seeAlso>
 						<rss:channel rdf:about="https://blog.delouw.ch/tag/ipa/feed/" />
 					</rdfs:seeAlso>
