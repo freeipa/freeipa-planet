@@ -13,6 +13,7 @@
 
 	<items>
 		<rdf:Seq>
+			<rdf:li rdf:resource="https://frasertweedale.github.io/blog-redhat/posts/2023-01-22-openshift-feature-gates.html" />
 			<rdf:li rdf:resource="http://rcritten.wordpress.com/?p=372" />
 			<rdf:li rdf:resource="https://frasertweedale.github.io/blog-redhat/posts/2022-08-29-jax-rs-header-formatting.html" />
 			<rdf:li rdf:resource="http://adam.younglogic.com/?p=10285" />
@@ -26,7 +27,6 @@
 			<rdf:li rdf:resource="https://frasertweedale.github.io/blog-redhat/posts/2021-07-21-freeipa-on-openshift-update.html" />
 			<rdf:li rdf:resource="https://frasertweedale.github.io/blog-redhat/posts/2021-06-29-openshift-live-changes.html" />
 			<rdf:li rdf:resource="https://frasertweedale.github.io/blog-redhat/posts/2021-06-09-systemd-cgroups-subuid.html" />
-			<rdf:li rdf:resource="https://frasertweedale.github.io/blog-redhat/posts/2021-05-27-oci-runtime-spec-runc.html" />
 			<rdf:li rdf:resource="http://adam.younglogic.com/?p=6968" />
 			<rdf:li rdf:resource="http://jhrozek.wordpress.com/?p=415" />
 			<rdf:li rdf:resource="https://richmegginson.livejournal.com/29741.html" />
@@ -60,6 +60,119 @@
 	</items>
 </channel>
 
+<item rdf:about="https://frasertweedale.github.io/blog-redhat/posts/2023-01-22-openshift-feature-gates.html">
+	<title>Fraser Tweedale: Enabling Kubernetes feature gates in OpenShift</title>
+	<link>https://frasertweedale.github.io/blog-redhat/posts/2023-01-22-openshift-feature-gates.html</link>
+	<content:encoded>&lt;h1 id=&quot;enabling-kubernetes-feature-gates-in-openshift&quot;&gt;Enabling Kubernetes feature gates in OpenShift&lt;/h1&gt;
+&lt;p&gt;When Kubernetes adds a feature or changes an existing one, the new
+behaviour usually starts out hidden behind a &lt;a href=&quot;https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/&quot;&gt;&lt;em&gt;feature
+gate&lt;/em&gt;&lt;/a&gt;. Enhancements start off in the &lt;em&gt;Alpha&lt;/em&gt;
+stability class, where they are usually guarded by a feature gate
+that is &lt;strong&gt;off by default&lt;/strong&gt;. If the enhancement proves stable and
+useful, after a few releases it will be promoted to &lt;em&gt;Beta&lt;/em&gt;, and the
+feature gate will typically default to &lt;strong&gt;on&lt;/strong&gt;, though it can still
+be disabled. The final stage of an enhancement is &lt;em&gt;GA (generally
+available)&lt;/em&gt;. If an enhancement reaches this stage, its feature gate
+becomes non-operational and is &lt;a href=&quot;https://kubernetes.io/docs/reference/using-api/deprecation-policy/&quot;&gt;deprecated&lt;/a&gt;, to be removed in a
+later release.&lt;/p&gt;
+&lt;p&gt;So, in a real world deployment how do you enable or disable a
+feature gate? There are several “distributions” of Kubernetes and
+various ways of doing it. In this short post I’ll demonstrate how
+to enable feature gates in &lt;em&gt;OpenShift&lt;/em&gt;, Red Hat’s container
+orchestration platform which is built on Kubernetes.&lt;/p&gt;
+&lt;h2 id=&quot;the-featuregate-resource&quot;&gt;The &lt;code&gt;FeatureGate&lt;/code&gt; resource &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#the-featuregate-resource&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;OpenShift recognises a &lt;code&gt;FeatureGate&lt;/code&gt; resource type. A single,
+resource of this type named &lt;code&gt;cluster&lt;/code&gt; determines the feature gates
+used across the cluster. A cluster administrator can modify
+&lt;code&gt;FeatureGate/cluster&lt;/code&gt; to vary the feature gates set in the cluster
+from the defaults.&lt;/p&gt;
+&lt;p&gt;The &lt;code&gt;FeatureGate&lt;/code&gt; resource is more than a mere list of feature gates
+to enable or disable. First, in addition to Kubernetes feature
+gates, it can also set feature gates for features in OpenShift
+itself, or other components or products in the cluster. Second, it
+can refer to named &lt;em&gt;feature sets&lt;/em&gt;—groups of feature gates—as an
+alternative to explicitly listing all the feature gates to enable or
+disable.&lt;/p&gt;
+&lt;p&gt;For example, the &lt;code&gt;TechPreviewNoUpgrade&lt;/code&gt; feature set enables a
+collection of features that Red Hat have marked as useful and worthy
+of customer &lt;em&gt;testing&lt;/em&gt;, with a view to possible promotion to full
+support in a future release. Customers do not need to enable
+individual feature gates but can instead enable all the &lt;em&gt;Technology
+Preview&lt;/em&gt; features via the following &lt;code&gt;FeatureGate&lt;/code&gt; spec:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot; id=&quot;cb1&quot;&gt;&lt;pre class=&quot;sourceCode yaml&quot;&gt;&lt;code class=&quot;sourceCode yaml&quot;&gt;&lt;span id=&quot;cb1-1&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb1-1&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;fu&quot;&gt;apiVersion&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;at&quot;&gt; config.openshift.io/v1&lt;/span&gt;&lt;/span&gt;
+&lt;span id=&quot;cb1-2&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb1-2&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;fu&quot;&gt;kind&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;at&quot;&gt; FeatureGate&lt;/span&gt;&lt;/span&gt;
+&lt;span id=&quot;cb1-3&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb1-3&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;fu&quot;&gt;metadata&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;:&lt;/span&gt;&lt;/span&gt;
+&lt;span id=&quot;cb1-4&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb1-4&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;at&quot;&gt;  &lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;at&quot;&gt; cluster&lt;/span&gt;&lt;/span&gt;
+&lt;span id=&quot;cb1-5&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb1-5&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;fu&quot;&gt;spec&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;:&lt;/span&gt;&lt;/span&gt;
+&lt;span id=&quot;cb1-6&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb1-6&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;at&quot;&gt;  &lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;featureSet&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;at&quot;&gt; TechPreviewNoUpgrade&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;div class=&quot;note&quot;&gt;
+&lt;p&gt;Unlike the more general &lt;code&gt;MachineConfig&lt;/code&gt; objects, &lt;code&gt;FeatureGate&lt;/code&gt;
+objects do not get composed together. Only the single object name
+&lt;code&gt;cluster&lt;/code&gt; is recognised. So there is no “lightweight” way to enable
+all the feature gates from &lt;code&gt;TechPreviewNoUpgrade&lt;/code&gt; plus one or two
+additional feature gates. To accomplish that, use a
+&lt;code&gt;CustomNoUpgrade&lt;/code&gt; with &lt;strong&gt;all&lt;/strong&gt; the desired feature gates listed.&lt;/p&gt;
+&lt;/div&gt;
+&lt;h2 id=&quot;enabling-specific-feature-gates&quot;&gt;Enabling specific feature gates &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#enabling-specific-feature-gates&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;What if the &lt;code&gt;TechPreviewNoUpgrade&lt;/code&gt; feature set does not include the
+feature gate you want to enable? The &lt;code&gt;CustomNoUpgrade&lt;/code&gt; feature set
+allows you to list the specific feature gates you want to enable or
+disable. The following exmaple enables the
+&lt;code&gt;UserNamespaceStatelessPodsSupport&lt;/code&gt; feature gate:&lt;/p&gt;
+&lt;div class=&quot;sourceCode&quot; id=&quot;cb2&quot;&gt;&lt;pre class=&quot;sourceCode yaml&quot;&gt;&lt;code class=&quot;sourceCode yaml&quot;&gt;&lt;span id=&quot;cb2-1&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb2-1&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;fu&quot;&gt;apiVersion&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;at&quot;&gt; config.openshift.io/v1&lt;/span&gt;&lt;/span&gt;
+&lt;span id=&quot;cb2-2&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb2-2&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;fu&quot;&gt;kind&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;at&quot;&gt; FeatureGate&lt;/span&gt;&lt;/span&gt;
+&lt;span id=&quot;cb2-3&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb2-3&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;fu&quot;&gt;metadata&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;:&lt;/span&gt;&lt;/span&gt;
+&lt;span id=&quot;cb2-4&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb2-4&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;at&quot;&gt;  &lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;at&quot;&gt; cluster&lt;/span&gt;&lt;/span&gt;
+&lt;span id=&quot;cb2-5&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb2-5&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;fu&quot;&gt;spec&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;:&lt;/span&gt;&lt;/span&gt;
+&lt;span id=&quot;cb2-6&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb2-6&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;at&quot;&gt;  &lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;featureSet&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;at&quot;&gt; CustomNoUpgrade&lt;/span&gt;&lt;/span&gt;
+&lt;span id=&quot;cb2-7&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb2-7&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;at&quot;&gt;  &lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;customNoUpgrade&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;:&lt;/span&gt;&lt;/span&gt;
+&lt;span id=&quot;cb2-8&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb2-8&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;at&quot;&gt;    &lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;enabled&lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;:&lt;/span&gt;&lt;/span&gt;
+&lt;span id=&quot;cb2-9&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb2-9&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;at&quot;&gt;    &lt;/span&gt;&lt;span class=&quot;kw&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;at&quot;&gt; UserNamespacesStatelessPodsSupport&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;h2 id=&quot;applying-featuregate-changes&quot;&gt;Applying &lt;code&gt;FeatureGate&lt;/code&gt; changes &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#applying-featuregate-changes&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;When you change &lt;code&gt;FeatureGate/cluster&lt;/code&gt;, new &lt;code&gt;MachineConfig&lt;/code&gt; objects
+get generated containing updated configurations of the relevant
+Kubernetes and OpenShift components (e.g. &lt;em&gt;kubelet&lt;/em&gt;). Machine
+Config Operator will progressively update and restart the nodes in
+the cluster, while ensuring availability.&lt;/p&gt;
+&lt;p&gt;Let’s see an example. First, observe that all &lt;code&gt;MachineConfigPool&lt;/code&gt;s
+are up to date (&lt;code&gt;ready&lt;/code&gt; count = machine &lt;code&gt;count&lt;/code&gt;):&lt;/p&gt;
+&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% oc get MachineConfigPool -o json | jq --compact-output \
+    '.items[] | { name: .metadata.name \
+                , count: .status.machineCount \
+                , ready: .status.readyMachineCount}'
+{&amp;quot;name&amp;quot;:&amp;quot;master&amp;quot;,&amp;quot;count&amp;quot;:3,&amp;quot;ready&amp;quot;:3}
+{&amp;quot;name&amp;quot;:&amp;quot;worker&amp;quot;,&amp;quot;count&amp;quot;:3,&amp;quot;ready&amp;quot;:3}&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Also observe that the &lt;code&gt;FeatureGate/cluster&lt;/code&gt; object does exist, but
+its spec is empty (so the default feature gate settings are used):&lt;/p&gt;
+&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% oc get -o json FeatureGate/cluster | jq .spec
+{}&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Now update the &lt;code&gt;FeatureGate/cluster&lt;/code&gt; object. Assume the
+&lt;code&gt;CustomNoUpgrade&lt;/code&gt; configuration shown earlier resides in a file
+named &lt;code&gt;featuregate-userns.yaml&lt;/code&gt;.&lt;/p&gt;
+&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% oc replace -f featuregate-userns.yaml
+featuregate.config.openshift.io/cluster replaced&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;After a few moments, Machine Config Operator will observe the new
+configuration and start updating and restarting the nodes.
+Initially, all pools have zero machines in state &lt;code&gt;ready&lt;/code&gt; (because
+they all need updating):&lt;/p&gt;
+&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% oc get MachineConfigPool -o json | jq --compact-output \
+    '.items[] | { name: .metadata.name \
+                , count: .status.machineCount \
+                , ready: .status.readyMachineCount}'
+{&amp;quot;name&amp;quot;:&amp;quot;master&amp;quot;,&amp;quot;count&amp;quot;:3,&amp;quot;ready&amp;quot;:0}
+{&amp;quot;name&amp;quot;:&amp;quot;worker&amp;quot;,&amp;quot;count&amp;quot;:3,&amp;quot;ready&amp;quot;:0}&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;After some period of time (which will vary by cluster size), all the
+nodes will have received the updated configuration and restarted.&lt;/p&gt;
+&lt;p&gt;As for verifying that the updates were applied correctly, that will
+depend on which gates are being enabled or disabled. It is out of
+scope for this article. But in terms of &lt;em&gt;how&lt;/em&gt; to set feature flags
+in OpenShift, I hope that this article has conveyed it clearly and
+that it will be useful to others.&lt;/p&gt;
+&lt;p&gt;For further detail, see the official OpenShift &lt;a href=&quot;https://docs.openshift.com/container-platform/4.12/nodes/clusters/nodes-cluster-enabling-features.html&quot;&gt;&lt;code&gt;FeatureGate&lt;/code&gt;
+documentation&lt;/a&gt; and &lt;a href=&quot;https://docs.openshift.com/container-platform/4.12/rest_api/config_apis/featuregate-config-openshift-io-v1.html&quot;&gt;&lt;code&gt;FeatureGate&lt;/code&gt; object
+schema&lt;/a&gt;.&lt;/p&gt;</content:encoded>
+	<dc:date>2023-01-22T00:00:00+00:00</dc:date>
+</item>
 <item rdf:about="http://rcritten.wordpress.com/?p=372">
 	<title>Rob Crittenden: Authentication for the pki command</title>
 	<link></link>
@@ -2685,318 +2798,6 @@ directory seems the most promising. While I wait for feedback on
 &lt;a href=&quot;https://github.com/systemd/systemd/issues/19781&quot;&gt;systemd#19781&lt;/a&gt;, I will start hacking on &lt;code&gt;runc&lt;/code&gt; and testing my
 modifications.&lt;/p&gt;</content:encoded>
 	<dc:date>2021-06-09T00:00:00+00:00</dc:date>
-</item>
-<item rdf:about="https://frasertweedale.github.io/blog-redhat/posts/2021-05-27-oci-runtime-spec-runc.html">
-	<title>Fraser Tweedale: Using runc to explore the OCI Runtime Specification</title>
-	<link>https://frasertweedale.github.io/blog-redhat/posts/2021-05-27-oci-runtime-spec-runc.html</link>
-	<content:encoded>&lt;h1 id=&quot;using-runc-to-explore-the-oci-runtime-specification&quot;&gt;Using &lt;code&gt;runc&lt;/code&gt; to explore the OCI Runtime Specification&lt;/h1&gt;
-&lt;p&gt;In recent posts I explored how to use user namespaces and cgroups v2
-on OpenShift. My main objective is to run &lt;em&gt;systemd&lt;/em&gt;-based workloads
-in user namespaces that map to unprivileged users on the host. This
-is a prerequisite to running &lt;a href=&quot;https://www.freeipa.org/page/Main_Page&quot;&gt;FreeIPA&lt;/a&gt; &lt;em&gt;securely&lt;/em&gt; in OpenShift,
-and supporting multitenancy.&lt;/p&gt;
-&lt;p&gt;Independently, user namespaces and cgroups v2 already work well in
-OpenShift. But for &lt;em&gt;systemd&lt;/em&gt; support there is a critical gap: the
-pod’s cgroup directory (mounted as &lt;code&gt;/sys/fs/cgroup/&lt;/code&gt; in the
-container) is owned by &lt;code&gt;root&lt;/code&gt;—the &lt;em&gt;host’s&lt;/em&gt; UID 0, which is unmapped
-in the pod’s user namespace. As a consequence, the container’s main
-process (&lt;code&gt;/sbin/init&lt;/code&gt;, which is &lt;em&gt;systemd&lt;/em&gt;) cannot manage cgroups,
-and terminates.&lt;/p&gt;
-&lt;p&gt;To understand how to close this gap, I needed to become familiar
-with the low-level container runtime behaviour. This post discusses
-the relationship between various container runtime components and
-demonstrates how to use &lt;code&gt;runc&lt;/code&gt; directly to create and run
-containers. I also outline some possible approaches to solving the
-cgroup ownership issue.&lt;/p&gt;
-&lt;h2 id=&quot;podman-kubernetes-cri-cri-o-runc-oh-my&quot;&gt;Podman, Kubernetes, CRI, CRI-O, runc, oh my! &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#podman-kubernetes-cri-cri-o-runc-oh-my&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h2&gt;
-&lt;p&gt;What actually happens when you “run a container”. Abstractly, a
-container runtime sets up a &lt;em&gt;sandbox&lt;/em&gt; and runs a process in it. The
-sandbox consists of a set of namespaces (PID, UTS, mount, cgroup,
-user, network, etc), and a restricted view of a filesystem (via
-&lt;code&gt;chroot(2)&lt;/code&gt; or similar mechanism).&lt;/p&gt;
-&lt;p&gt;There are several different container runtimes in widespread use.
-In fact, there are several different &lt;em&gt;layers&lt;/em&gt; of container runtime
-with different purposes:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;p&gt;End-user focused container runtimes include &lt;a href=&quot;https://podman.io/&quot;&gt;&lt;em&gt;Podman&lt;/em&gt;&lt;/a&gt; and
-&lt;em&gt;Docker&lt;/em&gt;.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Kubernetes defines the &lt;a href=&quot;https://github.com/kubernetes/community/blob/master/contributors/devel/sig-node/container-runtime-interface.md&quot;&gt;Container Runtime Interface (CRI)&lt;/a&gt;,
-which it uses to run containers. Compliant implementations
-include &lt;em&gt;containerd&lt;/em&gt; and &lt;a href=&quot;https://github.com/cri-o/cri-o&quot;&gt;&lt;em&gt;CRI-O&lt;/em&gt;&lt;/a&gt;.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;The &lt;em&gt;Open Container Initiative (OCI)&lt;/em&gt; &lt;a href=&quot;https://github.com/opencontainers/runtime-spec&quot;&gt;runtime spec&lt;/a&gt; defines a
-low-level container runtime interface. Implementations include
-&lt;a href=&quot;https://github.com/opencontainers/runc&quot;&gt;&lt;code&gt;runc&lt;/code&gt;&lt;/a&gt; and &lt;a href=&quot;https://github.com/containers/crun&quot;&gt;&lt;em&gt;crun&lt;/em&gt;&lt;/a&gt;. OCI runtimes are designed to
-be used by higher-level container runtimes. They are not friendly
-for humans to use directly.&lt;/p&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Running a container usually involves a higher-level runtime &lt;em&gt;and&lt;/em&gt; a
-low-level runtime. For example, Podman uses an OCI runtime; crun by
-default on Fedora but &lt;code&gt;runc&lt;/code&gt; works fine too. OpenShift (which is
-built on Kubernetes) uses CRI-O, which in turn uses &lt;code&gt;runc&lt;/code&gt; (CRI-O
-itself can use any OCI runtime).&lt;/p&gt;
-&lt;h3 id=&quot;division-of-responsibilities&quot;&gt;Division of responsibilities &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#division-of-responsibilities&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
-&lt;p&gt;So, what are responsibilities of the higher-level runtime compared
-to the OCI (or other low-level) runtime? In general the high-level
-runtime is responsible for:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;p&gt;Image management (pulling layers, preparing overlay filesystem)&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Determining the mounts, environment, namespaces, resource limits
-and security policies for the container&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Network setup for the container&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Metrics, accounting, etc.&lt;/p&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;The steps performed by the low-level runtime include:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;p&gt;Create and and enter required namespaces&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;&lt;code&gt;chroot(2)&lt;/code&gt; or &lt;code&gt;pivot_root(2)&lt;/code&gt; to the specified root filesystem
-path&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Create requested mounts&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Create cgroups and apply resource limits&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Adjust capabilities and apply seccomp policy&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Execute the container’s main process&lt;/p&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;div class=&quot;note&quot;&gt;
-&lt;p&gt;I mentioned several features specific to Linux in the list above.
-The OCI Runtime Specification also specifies Windows, Solaris and
-VM-based workloads. This post assumes a Linux workload, so many
-details are Linux-specific.&lt;/p&gt;
-&lt;/div&gt;
-&lt;p&gt;The above list is just a rough guide and not absolute. Depending on
-use case the high-level runtime might perform some of the low-level
-steps. For example, if container networking is required, Podman
-might create the network namespace, setting up devices and routing.
-Then, instead of asking the OCI runtime to create a network
-namespace, it tells the runtime to enter the existing namespace.&lt;/p&gt;
-&lt;h2 id=&quot;running-containers-via-runc&quot;&gt;Running containers via &lt;code&gt;runc&lt;/code&gt; &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#running-containers-via-runc&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h2&gt;
-&lt;p&gt;Because our effort is targeting OpenShift, the rest of this post
-mainly deals with &lt;code&gt;runc&lt;/code&gt;.&lt;/p&gt;
-&lt;div class=&quot;note&quot;&gt;
-&lt;p&gt;The functions demonstrated in this post were performed using &lt;code&gt;runc&lt;/code&gt;
-version 1.0.0-rc95+dev, which I built from source (commit
-&lt;code&gt;19d75e1c&lt;/code&gt;). The Fedora 33 and 34 repositories offer &lt;code&gt;runc&lt;/code&gt; version
-1.0.0-rc93, which &lt;strong&gt;does not work&lt;/strong&gt;.&lt;/p&gt;
-&lt;/div&gt;
-&lt;h3 id=&quot;clone-and-build&quot;&gt;Clone and build &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#clone-and-build&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
-&lt;p&gt;Install the Go compiler and &lt;em&gt;libseccomp&lt;/em&gt; development headers:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% sudo dnf -y --quiet install libseccomp-devel
-
-Installed:
-  golang-1.16.3-1.fc34.x86_64
-  golang-bin-1.16.3-1.fc34.x86_64
-  golang-src-1.16.3-1.fc34.noarch
-  libseccomp-devel-2.5.0-4.fc34.x86_64&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Clone the &lt;code&gt;runc&lt;/code&gt; source code and build the program:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% mkdir -p ~/go/src/github.com/opencontainers
-% cd ~/go/src/github.com/opencontainers
-% git clone --quiet https://github.com/opencontainers/runc
-% cd runc
-% make --quiet
-% ./runc --version
-runc version 1.0.0-rc95+dev
-commit: v1.0.0-rc95-31-g19d75e1c
-spec: 1.0.2-dev
-go: go1.16.3
-libseccomp: 2.5.0&lt;/code&gt;&lt;/pre&gt;
-&lt;h3 id=&quot;prepare-root-filesystem&quot;&gt;Prepare root filesystem &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#prepare-root-filesystem&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
-&lt;p&gt;I want to create a filesystem from my &lt;em&gt;systemd&lt;/em&gt; based
-&lt;a href=&quot;https://quay.io/repository/ftweedal/test-nginx&quot;&gt;&lt;code&gt;test-nginx&lt;/code&gt;&lt;/a&gt; container image. To avoid
-configuring overlay filesystems myself, I used Podman to create a
-container, then exported the whole container filesystem, via
-&lt;code&gt;tar(1)&lt;/code&gt;, to a local directory:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% podman create --quiet quay.io/ftweedal/test-nginx
-e97930b3…
-% mkdir rootfs
-% podman export e97930b3 | tar -xC rootfs
-% ls rootfs
-bin  dev home lib64      media opt  root sbin sys usr
-boot etc lib  lost+found mnt   proc run  srv  tmp var&lt;/code&gt;&lt;/pre&gt;
-&lt;h3 id=&quot;create-config.json&quot;&gt;Create &lt;code&gt;config.json&lt;/code&gt; &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#create-config.json&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
-&lt;p&gt;OCI runtimes read the container configuration from &lt;code&gt;config.json&lt;/code&gt; in
-the &lt;em&gt;bundle&lt;/em&gt; directory. (&lt;code&gt;runc&lt;/code&gt; uses the current directory as the
-default bundle directory). The &lt;code&gt;runc spec&lt;/code&gt; command generates a
-sample &lt;code&gt;config.json&lt;/code&gt; which can serve as a starting point:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% ./runc spec --rootless
-% file config.json
-config.json: JSON data
-% jq -c .process.args &amp;lt; config.json
-[&amp;quot;sh&amp;quot;]&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;We can see that &lt;code&gt;runc&lt;/code&gt; created the sample config. The command to
-execute is &lt;code&gt;sh(1)&lt;/code&gt;. Let’s change that to &lt;code&gt;/sbin/init&lt;/code&gt;:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% mv config.json config.json.orig
-% jq '.process.args=[&amp;quot;/sbin/init&amp;quot;]' config.json.orig \
-    &amp;gt; config.json&lt;/code&gt;&lt;/pre&gt;
-&lt;div class=&quot;notes&quot;&gt;
-&lt;p&gt;&lt;code&gt;jq(1)&lt;/code&gt; cannot operate on JSON files in situ, so you first have to
-copy or move the input file. The &lt;a href=&quot;https://linux.die.net/man/1/sponge&quot;&gt;&lt;code&gt;sponge(1)&lt;/code&gt;&lt;/a&gt; command,
-provided by the &lt;em&gt;moreutils&lt;/em&gt; package, offers an alternative approach.&lt;/p&gt;
-&lt;/div&gt;
-&lt;h3 id=&quot;run-container&quot;&gt;Run container &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#run-container&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
-&lt;p&gt;Now we can try and run the container:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% ./runc --systemd-cgroup run test
-Mount failed for selinuxfs on /sys/fs/selinux:  No such file or directory
-Another IMA custom policy has already been loaded, ignoring: Permission denied
-Failed to mount tmpfs at /run: Operation not permitted
-[!!!!!!] Failed to mount API filesystems.
-Freezing execution.&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;That didn’t work. systemd failed to mount a &lt;code&gt;tmpfs&lt;/code&gt; (temporary,
-memory-based filesystem) at &lt;code&gt;/tmp&lt;/code&gt;, and halted. The container
-itself was still running (but frozen). I was able to kill it from
-another terminal:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% ./runc list --quiet
-test
-% ./runc kill test KILL
-% ./runc list --quiet&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;It turned out that in addition to the process to run, the config
-requires several changes to successfully run a &lt;em&gt;systemd&lt;/em&gt;-based
-container. I will not repeat the whole process here, but I achieved
-a working config through a combination of trial-and-error, and
-comparison against OCI configurations produced by Podman. The
-following &lt;a href=&quot;https://stedolan.github.io/jq/manual/&quot;&gt;&lt;code&gt;jq(1)&lt;/code&gt;&lt;/a&gt; program performs the required modifications:&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot; id=&quot;cb8&quot;&gt;&lt;pre class=&quot;sourceCode numberSource json numberLines&quot;&gt;&lt;code class=&quot;sourceCode json&quot;&gt;&lt;span id=&quot;cb8-1&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb8-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;er&quot;&gt;.process.args&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;/sbin/init&amp;quot;&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;]&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb8-2&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb8-2&quot;&gt;&lt;/a&gt;&lt;span class=&quot;er&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;.process.env&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;|=&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;container=oci&amp;quot;&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;]&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb8-3&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb8-3&quot;&gt;&lt;/a&gt;&lt;span class=&quot;er&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;&amp;quot;containerID&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;&amp;quot;hostID&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;100000&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;&amp;quot;size&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;dv&quot;&gt;65536&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;$idmap&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb8-4&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb8-4&quot;&gt;&lt;/a&gt;&lt;span class=&quot;er&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;.linux.uidMappings&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;|=&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;$idmap&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb8-5&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb8-5&quot;&gt;&lt;/a&gt;&lt;span class=&quot;er&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;.linux.gidMappings&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;|=&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;$idmap&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb8-6&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb8-6&quot;&gt;&lt;/a&gt;&lt;span class=&quot;er&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;.linux.cgroupsPath&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;&amp;quot;user.slice:runc:test&amp;quot;&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb8-7&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb8-7&quot;&gt;&lt;/a&gt;&lt;span class=&quot;er&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;.linux.namespaces&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;|=&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;.&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;network&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;]&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb8-8&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb8-8&quot;&gt;&lt;/a&gt;&lt;span class=&quot;er&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;.process.capabilities&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;[]&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;=&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb8-9&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb8-9&quot;&gt;&lt;/a&gt;  &lt;span class=&quot;ot&quot;&gt;[&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;CAP_CHOWN&amp;quot;&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;CAP_FOWNER&amp;quot;&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;CAP_SETUID&amp;quot;&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;CAP_SETGID&amp;quot;&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;,&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb8-10&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb8-10&quot;&gt;&lt;/a&gt;    &lt;span class=&quot;st&quot;&gt;&amp;quot;CAP_SETPCAP&amp;quot;&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;CAP_NET_BIND_SERVICE&amp;quot;&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;]&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb8-11&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb8-11&quot;&gt;&lt;/a&gt;&lt;span class=&quot;er&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;fu&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;&amp;quot;type&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;tmpfs&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;,&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb8-12&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb8-12&quot;&gt;&lt;/a&gt;   &lt;span class=&quot;dt&quot;&gt;&amp;quot;source&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;st&quot;&gt;&amp;quot;tmpfs&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;,&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb8-13&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb8-13&quot;&gt;&lt;/a&gt;   &lt;span class=&quot;dt&quot;&gt;&amp;quot;options&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;rw&amp;quot;&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;rprivate&amp;quot;&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;nosuid&amp;quot;&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;nodev&amp;quot;&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;tmpcopyup&amp;quot;&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;]&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb8-14&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb8-14&quot;&gt;&lt;/a&gt;  &lt;span class=&quot;fu&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;$tmpfs&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb8-15&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb8-15&quot;&gt;&lt;/a&gt;&lt;span class=&quot;er&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;.mounts&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;|=&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;&amp;quot;destination&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;/var/log&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;$tmpfs&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;.&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb8-16&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb8-16&quot;&gt;&lt;/a&gt;&lt;span class=&quot;er&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;.mounts&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;|=&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;&amp;quot;destination&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;/tmp&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;$tmpfs&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;.&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb8-17&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb8-17&quot;&gt;&lt;/a&gt;&lt;span class=&quot;er&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;.mounts&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;|=&lt;/span&gt; &lt;span class=&quot;ot&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;&amp;quot;destination&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;st&quot;&gt;&amp;quot;/run&amp;quot;&lt;/span&gt;&lt;span class=&quot;fu&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;$tmpfs&lt;/span&gt;&lt;span class=&quot;ot&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;er&quot;&gt;.&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;This program performs the following actions:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;p&gt;Set the container process to &lt;code&gt;/sbin/init&lt;/code&gt; (which is &lt;em&gt;systemd&lt;/em&gt;).&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Set the &lt;code&gt;$container&lt;/code&gt; environment variable, as &lt;a href=&quot;https://systemd.io/CONTAINER_INTERFACE/#environment-variables&quot;&gt;required by
-systemd&lt;/a&gt;.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Add UID and GID mappings for IDs &lt;code&gt;1&lt;/code&gt;–&lt;code&gt;65536&lt;/code&gt; in the container’s
-user namespace. The host range (started at &lt;code&gt;100000&lt;/code&gt;) is taken
-from my user account’s assigned ranges in &lt;code&gt;/etc/subuid&lt;/code&gt; and
-&lt;code&gt;/etc/subgid&lt;/code&gt;. &lt;strong&gt;You may need a different number.&lt;/strong&gt; The mapping
-for the container’s UID &lt;code&gt;0&lt;/code&gt; to my user account already exists in
-the config.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Set the container’s cgroup path. A non-absolute path is
-interpreted relative to a runtime-determined location.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Tell the runtime to create a network namespace. Without this,
-the container will have no network stack and &lt;em&gt;nginx&lt;/em&gt; won’t run.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Set the &lt;a href=&quot;https://linux.die.net/man/7/capabilities&quot;&gt;capabilities&lt;/a&gt; required by the container. &lt;em&gt;systemd&lt;/em&gt;
-requires all of these capabilities, although
-&lt;code&gt;CAP_NET_BIND_SERVICE&lt;/code&gt; is only required for network name
-resolution (&lt;em&gt;systemd-resolved&lt;/em&gt;). And &lt;em&gt;nginx&lt;/em&gt;.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Tell the runtime to mount &lt;code&gt;tmpfs&lt;/code&gt; filesystems at &lt;code&gt;/run&lt;/code&gt;, &lt;code&gt;/tmp&lt;/code&gt;
-and &lt;code&gt;/var/log&lt;/code&gt;.&lt;/p&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;I ran the program to modify the config, then started the container:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% jq --from-file filter.jq config.json.orig &amp;gt; config.json
-% ./runc --systemd-cgroup run test
-systemd v246.10-1.fc33 running in system mode. (+PAM …
-Detected virtualization container-other.
-Detected architecture x86-64.
-
-Welcome to Fedora 33 (Container Image)!
-
-…
-
-[  OK  ] Started The nginx HTTP and reverse proxy server.
-[  OK  ] Reached target Multi-User System.
-[  OK  ] Reached target Graphical Interface.
-         Starting Update UTMP about System Runlevel Changes.
-[  OK  ] Finished Update UTMP about System Runlevel Changes.
-
-Fedora 33 (Container Image)
-Kernel 5.11.17-300.fc34.x86_64 on an x86_64 (console)
-
-runc login:&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;OK! &lt;em&gt;systemd&lt;/em&gt; initialised the system properly and started &lt;em&gt;nginx&lt;/em&gt;.
-We can confirm &lt;em&gt;nginx&lt;/em&gt; is running properly by running &lt;code&gt;curl&lt;/code&gt; in the
-container:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% ./runc exec test curl --silent --head localhost:80
-HTTP/1.1 200 OK
-Server: nginx/1.18.0
-Date: Thu, 27 May 2021 02:29:58 GMT
-Content-Type: text/html
-Content-Length: 5564
-Last-Modified: Mon, 27 Jul 2020 22:20:49 GMT
-Connection: keep-alive
-ETag: &amp;quot;5f1f5341-15bc&amp;quot;
-Accept-Ranges: bytes&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;At this point we cannot access &lt;em&gt;nginx&lt;/em&gt; from outside the container.
-That’s fine; I don’t need to work out how to do that. Not today,
-anyhow.&lt;/p&gt;
-&lt;h2 id=&quot;how-runc-creates-cgroups&quot;&gt;How &lt;code&gt;runc&lt;/code&gt; creates cgroups &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#how-runc-creates-cgroups&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h2&gt;
-&lt;p&gt;&lt;code&gt;runc&lt;/code&gt; manages container cgroups via the host’s &lt;em&gt;systemd&lt;/em&gt; service.
-Specifically, it communicates with &lt;em&gt;systemd&lt;/em&gt; over DBus to create a
-&lt;a href=&quot;https://www.freedesktop.org/wiki/Software/systemd/ControlGroupInterface/&quot;&gt;transient scope&lt;/a&gt; for the container. Then it binds the
-container cgroup namespace to this new scope.&lt;/p&gt;
-&lt;p&gt;Observe that the inode of &lt;code&gt;/sys/fs/cgroup/&lt;/code&gt; in the container is the
-same as the scope created for the container by &lt;em&gt;systemd&lt;/em&gt; on the
-host:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% ./runc exec test ls -aldi /sys/fs/cgroup
-64977 drwxr-xr-x. 5 root root 0 May 27 02:26 /sys/fs/cgroup
-
-% ls -aldi /sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/user.slice/runc-test.scope 
-64977 drwxr-xr-x. 5 ftweedal ftweedal 0 May 27 12:26 /sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/user.slice/runc-test.scope&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The mapping of &lt;code&gt;root&lt;/code&gt; in the container’s user namespace to
-&lt;code&gt;ftweedal&lt;/code&gt; is confirmed by the UID map of the container process:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% id --user ftweedal
-1000
-% ./runc list -f json | jq '.[]|select(.id=&amp;quot;test&amp;quot;).pid'
-186718
-% cat /proc/186718/uid_map
-         0       1000          1
-         1     100000      65536&lt;/code&gt;&lt;/pre&gt;
-&lt;h2 id=&quot;next-steps&quot;&gt;Next steps &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#next-steps&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h2&gt;
-&lt;p&gt;&lt;em&gt;systemd&lt;/em&gt; is running properly in the container, but &lt;code&gt;root&lt;/code&gt; in the
-container is mapped to my main user account. The container is not
-as isolated as I would like it to be. A partial sandbox escape
-could lead to the containerised process(es) messing with local
-files, or other processes owned by my user (including other
-containers).&lt;/p&gt;
-&lt;p&gt;User-namespaced containers in OpenShift (via CRI-O annotations) are
-allocated non-overlapping host ID ranges. All the host IDs are
-essentially anonymous. I confirmed this in &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/2021-03-10-openshift-user-namespace-multi-user.html&quot;&gt;a previous blog
-post&lt;/a&gt;. That is
-good! But the container’s cgroup is owned by the &lt;em&gt;host’s&lt;/em&gt; UID 0,
-which is unmapped in the container. &lt;em&gt;systemd&lt;/em&gt;-based workloads
-cannot run because the container cannot write to its cgroupfs.&lt;/p&gt;
-&lt;p&gt;Therefore, the next steps in my investigation are:&lt;/p&gt;
-&lt;ol type=&quot;1&quot;&gt;
-&lt;li&gt;&lt;p&gt;Alter the ID mappings to use a single mapping of only “anonymous”
-users. This is a simple change to the OCI config. The host IDs
-still have to come from the user’s allocated sub-ID range.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Find (or implement) a way to change the ownership of the
-container’s cgroup scope to the &lt;strong&gt;container’s&lt;/strong&gt; UID 0.&lt;/p&gt;&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;When using the &lt;em&gt;systemd&lt;/em&gt; cgroup manager, &lt;code&gt;runc&lt;/code&gt; uses the &lt;a href=&quot;https://www.freedesktop.org/wiki/Software/systemd/ControlGroupInterface/&quot;&gt;&lt;em&gt;transient
-unit API&lt;/em&gt;&lt;/a&gt; to ask &lt;em&gt;systemd&lt;/em&gt; to create a new scope for the
-container. I am still learning about this API. Perhaps there is a
-way to specify a different ownership for the new scope or service.
-If so, we should be able to avoid changes to higher-level container
-runtimes like CRI-O. That would be the best outcome.&lt;/p&gt;
-&lt;p&gt;Otherwise, I will investigate whether we could use the OCI
-&lt;code&gt;createRuntime&lt;/code&gt; hook to &lt;code&gt;chown(2)&lt;/code&gt; the container’s cgroup scope.
-Unfortunately, the semantics of &lt;code&gt;createRuntime&lt;/code&gt; is currently
-underspecified. The specification is ambiguous about whether the
-containers cgroup scope exists when this hook is executed. If this
-approach is valid, we will have to update CRI-O to add the relevant
-hook command to the OCI config.&lt;/p&gt;
-&lt;p&gt;Another possible approach is for the high-level runtime to perform
-the ownership change itself. This would be done after it invokes
-the OCI runtime’s &lt;code&gt;create&lt;/code&gt; command, but before it invokes &lt;code&gt;start&lt;/code&gt;.
-(See also the OCI &lt;a href=&quot;https://github.com/opencontainers/runtime-spec/blob/master/runtime.md#lifecycle&quot;&gt;container lifecycle description&lt;/a&gt;). However, on
-OpenShift CRI-O runs as user &lt;code&gt;containers&lt;/code&gt; and the container’s cgroup
-scope is owned by &lt;code&gt;root&lt;/code&gt;. So I have doubts about the viability of
-this approach, as well as the OCI hook approach.&lt;/p&gt;
-&lt;p&gt;Whatever the outcome, there will certainly be more blog posts as I
-continue this long-running investigation. I still have much to
-learn as I struggle towards the goal of systemd-based workloads
-running securely on OpenShift.&lt;/p&gt;</content:encoded>
-	<dc:date>2021-05-27T00:00:00+00:00</dc:date>
 </item>
 <item rdf:about="http://adam.younglogic.com/?p=6968">
 	<title>Adam Young: Dealing with reused Serial Numbers for CAs</title>
