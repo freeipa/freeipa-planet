@@ -13,6 +13,7 @@
 
 	<items>
 		<rdf:Seq>
+			<rdf:li rdf:resource="tag:ssimo.org.blog:id_022" />
 			<rdf:li rdf:resource="https://frasertweedale.github.io/blog-redhat/posts/2023-02-02-freeipa-pkinit-certmap-vuln.html" />
 			<rdf:li rdf:resource="https://frasertweedale.github.io/blog-redhat/posts/2023-01-22-openshift-feature-gates.html" />
 			<rdf:li rdf:resource="http://rcritten.wordpress.com/?p=372" />
@@ -68,6 +69,141 @@
 	</items>
 </channel>
 
+<item rdf:about="tag:ssimo.org.blog:id_022">
+	<title>Simo Sorce: OpenSSL 3.0 Providers and PKCS#11</title>
+	<link>https://ssimo.org/blog/id_022.html</link>
+	<content:encoded>&lt;p&gt;After a long hiatus I am back with a new blog post.&lt;/p&gt;
+
+&lt;p&gt;What triggered it is that I started a new &lt;a href=&quot;https://github.com/latchset/pkcs11-provider&quot;&gt;project&lt;a&gt;
+because I wanted to explore two things I have been putting off for a while,
+and I had some time on my hands on a long weekend.&lt;/a&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;What's interesting about this project is that, on paper, it is
+straightforward, we just wire up one API to another, and given both deal with
+simple cryptography primitives it should be pretty simple... or is it?&lt;/p&gt;
+
+&lt;p&gt;Well of course it isn't, first of all we are talking about cryptography,
+which is notoriously finicky in terms of API for various legitimate, and less
+so, reasons. But the actual calls that need to be made to implement the
+cryptography are the least problematic, for the most part. What really makes
+things hard are the lack of documentation about OpenSSL providers, and the
+impedance mismatch between the way OpenSSL goes about handling some of the
+operation and the way PKCS#11 envisions applications should handle the
+cryptography engine.&lt;/p&gt;
+
+&lt;p&gt;So the task of pairing two APIs is compounded by the need to decide what
+compromise can be reasonable when the semantics differ.&lt;/p&gt;
+
+&lt;h4&gt;A small rant on OpenSSL internals&lt;/h4&gt;
+
+&lt;p&gt;Of course this is possible only after you go through digging into
+OpenSSL's source code to try to figure out the semantics in the first place.
+I have to admit that OpenSSL's internals are quite convoluted and baffling at
+times, and more than once I felt like the architecture of the code was
+unnecessarily complicated and obscure/obtuse. Of course I understand that
+there is a hefty dose of legacy code that forced some of these contortions but
+still...&lt;/p&gt;
+
+&lt;p&gt;The code is really hard to follow for a few reasons:&lt;/p&gt;
+
+&lt;p&gt;- A lot of code is generated at build time through a nest of macros.&lt;br /&gt;
+This means that some of the tools I use to automatically navigate the code are
+neutralized because they can't preprocess macros, forcing to resort to clever
+grepping of partial names to try and find the place where these macros may be,
+then mentally reconstruct each time what might be generated to figure out the
+next function called to look at.&lt;br /&gt;
+I could use stuff like gcc -E to get and index the preprocessed output before
+compilation, but it is not as easy to do and requires battling the build
+system.
+&lt;/p&gt;
+
+&lt;p&gt;- A ton of indirection and jump tables are used all over the code.&lt;br /&gt;
+The OpenSSL code is excessively dynamic, at runtime there are dozens and dozens
+of places where the code is &quot;pluggable&quot; and several different cryptography
+primitives can be called from one API and then multiplexed internally based
+on some identifier passed from the application. This makes the API easier to
+use from applications, but makes it hard to follow what is being called next at
+any given time.&lt;/p&gt;
+
+&lt;p&gt;The lack of very obvious naming standards, the reuse of very
+simple words like &quot;sign/encrypt&quot; as elements of these tables and several
+layers of indirection introduced by providers and other layers that deal with
+legacy APIs makes it impossible to read the code linearly, from point of entry
+to the execution of the actual primitives. In order to understand with any
+degree of confidence what is going on under the hood you need to keep in your
+head a lot of knowledge of how the internal works. This is beyond the ability
+of my brain, so I often resort to using GDB and some strategically placed break
+points. Unfortunately just using gdb and stepping through is also not a viable
+way to explore the code because the abstraction around internal name/provider
+and therefore function routing/data caching resolution is absolutely
+impenetrable.&lt;/p&gt;
+
+&lt;h4&gt;A Small rant on PKCS#11&lt;/h4&gt;
+
+&lt;p&gt;Ok enough about OpenSSL, let's look into the PKCS#11 API.&lt;/p&gt;
+
+&lt;p&gt;At a first glance I have to say that the PKCS#11 API is pretty
+straightforward, you just call an initial entry point after dlopen() of the
+driver you want to use, get a function table and then each cryptography
+primitive that the standard support is called through reasonable well though
+and minimal abstractions.&lt;/p&gt;
+
+&lt;p&gt;What are the issues surrounding PKCS#11 then? It's more of an ecosystem
+issues in this case. The PKCS#11 API has gone through various revisions, so you
+have to deal with tokens that may be stuck on an older version (and therefore
+support less stuff, but if that was the only issue it would be easy to solve,
+you just write 2/3 variants per PKCS#11 version and you are done ... not so
+fast!&lt;/p&gt;
+
+&lt;p&gt;One of the issues with PKCS#11 is that historically it was not prescriptive
+enough, tokens can decide arbitrarily which kind of functions they support, so
+you have to be prepare to deal at runtime with missing functionality. This may
+force adding fallback code to handle functions that OpenSSL assumes are provided
+by a single provider facility.&lt;/p&gt;
+
+&lt;p&gt;Another issue is that although the spec is quite big and detail, it is, at
+the same time, somewhat under specified when it comes to some of the details.
+For example trying to figure out what exact formatting is needed for an attribute
+like CKA_EC_PARAMS (for ECDSA signatures ) is not trivial due to use of a lot
+of ASN.1 in DER format and OIDs.&lt;/p&gt;
+
+&lt;p&gt;Then there are the many and obviously bogus drivers, those that stuck to the
+letter of the spec to avoid coding difficult stuff. One notable example I will
+not mention by name I looked at recently is as bare bone as you can possibly
+imagine and be somewhat spec compliant. A bit depressing.&lt;/p&gt;
+
+&lt;p&gt;The problem with low quality drivers is that you need to account for quirks,
+and add more code to handle stuff that can be made to work but not quite the
+correct way you should be doing it.&lt;/p&gt;
+
+&lt;h4&gt;Conclusions&lt;/h4&gt;
+
+&lt;p&gt;Although I like ranting, I have to say I am enjoying writing this code, just
+like the old Samba times, you have to go and discover what actually works, what
+other engineers came up and actually did behind APIs. Discovering the actual
+semantics, and sometimes using them against the original Kung Fu style is
+fun.&lt;/p&gt;
+
+&lt;p&gt;The main goal of this project is to make Hardware Tokens really accessible
+to applications. Unlike the old &quot;enignes&quot; APIs in OpenSSL, where applications
+had to be explicitly coded to work differently in the presence of an external
+cryptography module, the provider's API is basically hidden within OpenSSL's
+core and &quot;transparent&quot; to applications.&lt;/p&gt;
+
+&lt;p&gt;code written against the modern OpenSSL v3 facilities that uses URIs
+to reference keys (a file name is considered a URI) through the store API could
+use a PKCS#11 module without any code difference, by simply replacing the pem
+file path with a pkcs11: URI.&lt;/p&gt;
+
+&lt;p&gt;Of course most applications are written against a mix of old and clunky
+OpenSSL APIs that have not been fully deprecated yet, but given the changes we
+see at the horizon, with the advent of PQC algorithms, I think we have a chance
+to see a lot of applications changing over to the new OpenSSL APIs which will
+be the only ones to offer access to these new algorithms.&lt;/p&gt;
+
+&lt;p&gt;Fun times ahead&lt;/p&gt;</content:encoded>
+	<dc:date>2023-02-04T21:38:00+00:00</dc:date>
+</item>
 <item rdf:about="https://frasertweedale.github.io/blog-redhat/posts/2023-02-02-freeipa-pkinit-certmap-vuln.html">
 	<title>Fraser Tweedale: CVE-2022-4254: FreeIPA PKINIT certificate mapping vulnerability</title>
 	<link>https://frasertweedale.github.io/blog-redhat/posts/2023-02-02-freeipa-pkinit-certmap-vuln.html</link>
