@@ -13,10 +13,10 @@
 
 	<items>
 		<rdf:Seq>
+			<rdf:li rdf:resource="http://rcritten.wordpress.com/?p=382" />
 			<rdf:li rdf:resource="tag:ssimo.org.blog:id_022" />
 			<rdf:li rdf:resource="https://frasertweedale.github.io/blog-redhat/posts/2023-02-02-freeipa-pkinit-certmap-vuln.html" />
 			<rdf:li rdf:resource="https://frasertweedale.github.io/blog-redhat/posts/2023-01-22-openshift-feature-gates.html" />
-			<rdf:li rdf:resource="http://rcritten.wordpress.com/?p=372" />
 			<rdf:li rdf:resource="https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra-2/" />
 			<rdf:li rdf:resource="https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra/" />
 			<rdf:li rdf:resource="https://frasertweedale.github.io/blog-redhat/posts/2022-08-29-jax-rs-header-formatting.html" />
@@ -69,6 +69,12 @@
 	</items>
 </channel>
 
+<item rdf:about="http://rcritten.wordpress.com/?p=382">
+	<title>Rob Crittenden: dogtag PKI security domain management</title>
+	<link></link>
+	<content:encoded>The dogtag PKI server maintains its own list of servers by type (CA, KRA, etc.) in what it calls its security domain. Prior to IPA 4.9.7 this security domain was not cleaned up when an IPA server was removed. This left &amp;#8220;ghost&amp;#8221; servers that PKI thought still existed. We can use the CA REST API &amp;#8230; &lt;a href=&quot;https://rcritten.wordpress.com/2023/04/28/dogtag-pki-security-domain-management/&quot; class=&quot;more-link&quot;&gt;Continue reading &lt;span class=&quot;screen-reader-text&quot;&gt;dogtag PKI security domain management&lt;/span&gt; &lt;span class=&quot;meta-nav&quot;&gt;&amp;#8594;&lt;/span&gt;&lt;/a&gt;</content:encoded>
+	<dc:date>2023-04-28T13:25:11+00:00</dc:date>
+</item>
 <item rdf:about="tag:ssimo.org.blog:id_022">
 	<title>Simo Sorce: OpenSSL 3.0 Providers and PKCS#11</title>
 	<link>https://ssimo.org/blog/id_022.html</link>
@@ -851,12 +857,6 @@ that it will be useful to others.&lt;/p&gt;
 documentation&lt;/a&gt; and &lt;a href=&quot;https://docs.openshift.com/container-platform/4.12/rest_api/config_apis/featuregate-config-openshift-io-v1.html&quot;&gt;&lt;code&gt;FeatureGate&lt;/code&gt; object
 schema&lt;/a&gt;.&lt;/p&gt;</content:encoded>
 	<dc:date>2023-01-22T00:00:00+00:00</dc:date>
-</item>
-<item rdf:about="http://rcritten.wordpress.com/?p=372">
-	<title>Rob Crittenden: Authentication for the pki command</title>
-	<link></link>
-	<content:encoded>The dogtag PKI CA provides its own command-line tools for reading and writing configuration. Some of these require authentication in order to work. On the CA machine as root you have access to the NSS certificate database so can use the subsystem certificate for authentication, like: # pki -d /etc/pki/pki-tomcat/alias -n 'subsystemCert cert-pki-ca' -f /etc/pki/pki-tomcat/password.conf &amp;#8230; &lt;a href=&quot;https://rcritten.wordpress.com/2023/01/13/authentication-for-the-pki-command/&quot; class=&quot;more-link&quot;&gt;Continue reading &lt;span class=&quot;screen-reader-text&quot;&gt;Authentication for the pki command&lt;/span&gt; &lt;span class=&quot;meta-nav&quot;&gt;&amp;#8594;&lt;/span&gt;&lt;/a&gt;</content:encoded>
-	<dc:date>2023-01-13T16:41:25+00:00</dc:date>
 </item>
 <item rdf:about="https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra-2/">
 	<title>Alexander Bokovoy: FreeIPA authentication improvements and Fedora Infrastructure part 2</title>
