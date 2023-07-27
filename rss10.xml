@@ -13,7 +13,7 @@
 
 	<items>
 		<rdf:Seq>
-			<rdf:li rdf:resource="http://rcritten.wordpress.com/?p=382" />
+			<rdf:li rdf:resource="http://rcritten.wordpress.com/?p=403" />
 			<rdf:li rdf:resource="tag:ssimo.org.blog:id_022" />
 			<rdf:li rdf:resource="https://frasertweedale.github.io/blog-redhat/posts/2023-02-02-freeipa-pkinit-certmap-vuln.html" />
 			<rdf:li rdf:resource="https://frasertweedale.github.io/blog-redhat/posts/2023-01-22-openshift-feature-gates.html" />
@@ -69,11 +69,11 @@
 	</items>
 </channel>
 
-<item rdf:about="http://rcritten.wordpress.com/?p=382">
-	<title>Rob Crittenden: dogtag PKI security domain management</title>
+<item rdf:about="http://rcritten.wordpress.com/?p=403">
+	<title>Rob Crittenden: Addressing cert-find performance</title>
 	<link></link>
-	<content:encoded>The dogtag PKI server maintains its own list of servers by type (CA, KRA, etc.) in what it calls its security domain. Prior to IPA 4.9.7 this security domain was not cleaned up when an IPA server was removed. This left &amp;#8220;ghost&amp;#8221; servers that PKI thought still existed. We can use the CA REST API &amp;#8230; &lt;a href=&quot;https://rcritten.wordpress.com/2023/04/28/dogtag-pki-security-domain-management/&quot; class=&quot;more-link&quot;&gt;Continue reading &lt;span class=&quot;screen-reader-text&quot;&gt;dogtag PKI security domain management&lt;/span&gt; &lt;span class=&quot;meta-nav&quot;&gt;&amp;#8594;&lt;/span&gt;&lt;/a&gt;</content:encoded>
-	<dc:date>2023-04-28T13:25:11+00:00</dc:date>
+	<content:encoded>A number of related certificate integration issues were reported and fixed. They were most visible in the WebUi where we are used to relatively snappy responses to requests but were also prominent on the command-line. The issues were that if there were a lot of certificates, say five thousand, it could take 17 seconds or &amp;#8230; &lt;a href=&quot;https://rcritten.wordpress.com/2023/07/26/addressing-cert-find-performance/&quot; class=&quot;more-link&quot;&gt;Continue reading &lt;span class=&quot;screen-reader-text&quot;&gt;Addressing cert-find performance&lt;/span&gt; &lt;span class=&quot;meta-nav&quot;&gt;&amp;#8594;&lt;/span&gt;&lt;/a&gt;</content:encoded>
+	<dc:date>2023-07-26T15:58:48+00:00</dc:date>
 </item>
 <item rdf:about="tag:ssimo.org.blog:id_022">
 	<title>Simo Sorce: OpenSSL 3.0 Providers and PKCS#11</title>
