@@ -5,8 +5,134 @@
 	<link rel="self" href="http://planet.freeipa.org/atom.xml"/>
 	<link href="http://planet.freeipa.org/"/>
 	<id>http://planet.freeipa.org/atom.xml</id>
-	<updated>2023-08-15T05:12:51+00:00</updated>
+	<updated>2023-08-16T05:13:16+00:00</updated>
 	<generator uri="http://www.planetplanet.org/">Planet/2.0 +http://www.planetplanet.org</generator>
+
+	<entry>
+		<title type="html">Flock to Fedora 2023 report</title>
+		<link href="https://vda.li/en/posts/2023/08/11/Flock-report/"/>
+		<id>https://vda.li/en/posts/2023/08/11/Flock-report/</id>
+		<updated>2023-08-11T10:46:00+00:00</updated>
+		<content type="html">&lt;p&gt;On August 2nd-4th, 2023, Fedora Project ran its annual contributors conference, &lt;a href=&quot;https://flocktofedora.org&quot;&gt;Flock to Fedora&lt;/a&gt;, in Cork, Ireland. After a previous successful Flock in 2019 in Budapest, Fedora contributors did not meet in person due to rough pandemia years and had created Nest with Fedora online event instead. Nest ran for three years but online meetings aren’t a full replacement for face to face collaboration. Cork’s Flock was supposed to combine both online and offline events together.&lt;/p&gt;
+
+&lt;p&gt;I have been attending and presenting at various Flock and Nest events over past seven years. I was looking forward to see and collaborate with many other project participants and users and get to know new people as well.&lt;/p&gt;
+
+&lt;p&gt;My travel to Cork was unremarkable. I took a direct flight from Helsinki to Dublin and then an Aircoach bus to Cork. The ‘unremarkable’ part was really about the unexpected delays people did report over the Matrix channel. The only ‘trouble’ I had was to catch a taxi at 11pm after arrival to Cork to get to my B&amp;amp;B. The Aircoach bus from Dublin airport is very popular in summer and whatever taxi fleet is in Cork was DDoSed by the passengers.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://vda.li/en/img/resized/2023-flock/hotel-stay-800-480d673e0.jpg&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Cork is hilly. I stayed in excellent B&amp;amp;B across the road from the conference hotel. The hotel and its conference facilities are in separate buildings; the events building is up hill from the hotel. Walking is helpful, climbing harder but given we are sitting most of the time, was a welcoming ‘struggle’. Perhaps, my stay outside of the conference hotel has also helped to avoid COVID-19 which few other participants, sadly, contracted. It is hit or miss every time.&lt;/p&gt;
+
+&lt;p&gt;Unfortunately, not everyone made to Cork. &lt;a href=&quot;https://sfconservancy.org/news/2022/jun/14/remembering-marina/&quot;&gt;Marina Zhurakhinskaya&lt;/a&gt; passed away in June 2022. &lt;a href=&quot;https://funnelfiasco.com/blog/2023/05/12/inaction-bcotton/&quot;&gt;Ben Cotton&lt;/a&gt;, Fedora Program Manager, has been let go as a part of Red Hat’s layoffs earlier this year. Both had definitely changed Fedora project dramatically, in many ways, both leading to openness and friendliness Fedora is known for. Many presenters remembered both Marina and Ben during their sessions.&lt;/p&gt;
+
+&lt;p&gt;2023’s edition of Flock to Fedora was also the first Fedora Project’s event collocated with CentOS Connect. As a result, it brought together Red Hat Enterprise Linux distribution upstreams and downstreams together.&lt;/p&gt;
+
+&lt;h2 id=&quot;talks&quot;&gt;Talks&lt;/h2&gt;
+
+&lt;p&gt;In total, there were up to four parallel tracks, dedicated to different areas of a distribution development and a project’s life and spanned over three days. That, unsurprisingly, made it challenging to visit all talks and activities. It is a common trait shared by many successful events. And for those who wanted to continue discussions after a talk has ended, there is always a ‘hallway track’.&lt;/p&gt;
+
+&lt;h3 id=&quot;state-of-fedora-2023&quot;&gt;State of Fedora 2023&lt;/h3&gt;
+&lt;p&gt;The first talk was ‘State of Fedora 2023’ by the project leader, Matthew Miller. Recording is available &lt;a href=&quot;https://www.youtube.com/live/LhLEV4fi2xw?feature=share&amp;t=21327&quot;&gt;here&lt;/a&gt;. I am linking to the re-take of the talk as the original streaming was off by 20 minutes and Matthew had to reprise it again.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://vda.li/en/img/resized/2023-flock/state-of-fedora-800-4a2f915c0.jpg&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;A major announcement made during the talk was a hiring one. &lt;a href=&quot;https://communityblog.fedoraproject.org/job-posting-fedora-operations-architect/&quot;&gt;Fedora Operations Architect role&lt;/a&gt; has been introduced after a program manager role that Ben Cotton so masterfully executed was eliminated. Hopefully, this new role will be filled soon and will allow to capture the same benefits that Ben brought to Fedora. The role is a bit different, though, as it is focused on cross-project and cross-distro impact across Fedora and RHEL.&lt;/p&gt;
+
+&lt;p&gt;Fedora contributors’ survey results were also unveiled by Matthew in the talk. In general, contributors keep trust in the project and continue their participation at the pre-pandemia levels. Recent social networking turmoil around Red Hat actions hasn’t influenced the results too much. The screenshots below are from the video stream as the talk’s slides aren’t yet available.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://vda.li/en/img/resized/2023-flock/state-of-fedora-stats-1-800-17d2108e9.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://vda.li/en/img/resized/2023-flock/state-of-fedora-stats-2-800-ba2fcdd53.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;The talk went into details on what Matthew and Fedora Council aim for Fedora Project’s future. Growing a project with thousands of contributors spread around the world and representing different cultures is hard. A lot of effort is put into making Fedora a welcoming place to everyone who is willing to work together towards a common goal.&lt;/p&gt;
+
+&lt;h3 id=&quot;rpminspect-lessons-from-three-distributions&quot;&gt;&lt;code&gt;rpminspect&lt;/code&gt;: Lessons from three distributions&lt;/h3&gt;
+
+&lt;p&gt;David Cantrell created and maintains a tool that helps RHEL maintainers to keep their packages sane over years of maintenance. It is run as a part of CentOS Stream merge request process, as part of Fedora gating and pull request testing, and as a gating test for RHEL.&lt;/p&gt;
+
+&lt;p&gt;The talk itself is an excellent retrospective on what one should consider when creating a new Open Source project while working on it full time. David provided observations on how to sell the idea to your management, how to get people interested in becoming a community for your project, how to sustain development in a long run. This is one of rare gems of a ‘lone wolf’ maintainership stories that everybody needs to absorb when they start their new journey. Believe me, it is worth it.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://vda.li/en/img/resized/2023-flock/rpminspect-1-800-b79dc5331.jpg&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;using-aiml-to-process-automated-test-results-from-openqa&quot;&gt;Using AI/ML to process automated test results from OpenQA&lt;/h3&gt;
+
+&lt;p&gt;Tim Flink from Fedora QE team decided to apply AI/ML to a problem of identifying hanging or failing jobs in OpenQA. OpenQA runs full-VM tests and records screencasts of everything what is shown on a VM screen. A crash of a graphical environment is abruptly visible there as graphics would be replaced by a terminal with a Wayland’s stacktrace. What followed is an experiment on processing these screens to reliably detect a particular type of a crash.&lt;/p&gt;
+
+&lt;p&gt;We spent some time with Tim discussing how these experiments can be applied to finding out possible issues in other system reports. Since Fedora is upstream of CentOS Stream or RHEL, it means certain issues – and their fixes – would often appear in Fedora first. If we could train a model on those issues in Fedora, can we detect automatically whether a particular fix is required in RHEL later? This is quite relevant to FreeIPA and SSSD as we do run their tests in OpenQA as a part of Fedora Server release criteria.&lt;/p&gt;
+
+&lt;p&gt;Another possible use case is to do a reverse training. Since we do know how a potential failure could look like, we can intentionally build an OpenQA test environment that would reproduce the failure and then train a model to recognize logs from such failures in real life scenarios. For example, establishing trust to Active Directory in FreeIPA is reliant on a working DNS setup, working firewall, etc. Failure to communicate through an incomplete firewall would be reflected with timeouts in the logs which we could train to recognize. There are endless possibilities here to aid through &lt;em&gt;known errors&lt;/em&gt;…&lt;/p&gt;
+
+&lt;h3 id=&quot;hallway-track&quot;&gt;Hallway track&lt;/h3&gt;
+
+&lt;p&gt;On a similar note, I had discussion with Amazon’s David Duncan in the ‘hallway track’ which started from an observation that Cloud SIG would really benefit from our passwordless work: distributing VMs with pre-set passwords is not ideal, an ability to inject FIDO2 passkey information and have everything obey it at login in cloud would be great to have. Somewhere along this way, discussion switched to CoreOS-based environments and I realised my experiments with Fedora Silverblue to develop passwordless support for FreeIPA would probably be a subject to a talk that would be interesting to others as well.&lt;/p&gt;
+
+&lt;p&gt;I am running my own Silverblue images which source SSSD and FreeIPA upstream test builds to allow me easily to switch between different potential options in one go, without messing with an installation environment. It is quite important for the integration work we do and would be crucial for end-to-end testing of upcoming GNOME changes.&lt;/p&gt;
+
+&lt;p&gt;This also provided me an insight into what container-based environments need from FreeIPA and overall from enterprise domains to fit nicely. I should have submitted a talk about that to Flock! Well, I will do one next year, for sure. (And, TODO: file issues to track for that integration to FreeIPA upstream!)&lt;/p&gt;
+
+&lt;p&gt;Another interesting discussion we had with Jonathan Dieter. Jonathan is a long term Fedora contributor and FreeIPA user. For past several years Jonathan works with a local Irish company that provides services around the world to test local phone numbers. They maintain an infrastructure in more than 80 countries where there might be no global cloud providers at all. To keep that infrastructure reliable, they use &lt;a href=&quot;https://www.jdieter.net/posts/2021/11/30/piv-vs-sk/&quot;&gt;FreeIPA&lt;/a&gt; (not alone, of course) and &lt;a href=&quot;https://www.jdieter.net/posts/2020/10/31/switching-to-ostree/&quot;&gt;OStree-based images&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;asahi-linux-and-fedora&quot;&gt;Asahi Linux and Fedora&lt;/h3&gt;
+
+&lt;p&gt;It is one of the talks that I missed to attend in person as conflicts are inevitable: Mo Duffy’s Podman Desktop talk and Adam Williamson’s Fedora CI state talk were running at the same time.&lt;/p&gt;
+
+&lt;p&gt;Asahi Linux is a project which aims to upstream support for Apple’s ARM64 architecture, best known through Apple’s M1 and M2 systems. At the Flock Asahi Linux project members &lt;a href=&quot;https://asahilinux.org/2023/08/fedora-asahi-remix/&quot;&gt;have announced&lt;/a&gt; that not only Fedora Asahi Remix will be the flagship distribution for the project, but also &lt;a href=&quot;https://discussion.fedoraproject.org/c/neighbors/asahi/92&quot;&gt;Fedora Discourse instance&lt;/a&gt; will be used to handle Asahi Linux community collaborations.&lt;/p&gt;
+
+&lt;p&gt;Asahi’s announcement also an example of how friendly has become Fedora Project as a community over years. I am definitely looking forward to see the remix to become one of official builds of Fedora.&lt;/p&gt;
+
+&lt;h3 id=&quot;podman-desktop-from-fedora-to-kubernetes-for-beginners&quot;&gt;Podman desktop: from Fedora to Kubernetes for beginners&lt;/h3&gt;
+
+&lt;p&gt;Mo Duffy gave an outstanding talk about using Podman desktop to deliver workloads for non-technical people. It was a highlight of the conference, for sure. She also made few interesting points. For one, running cloud-based workloads locally to allow offline operations is nice. Mo demonstrated a &lt;a href=&quot;https://blog.linuxgrrl.com/2022/01/19/running-penpot-locally-docker-free-with-podman/&quot;&gt;Penpot instance&lt;/a&gt;, which is a design and prototyping application. Running it locally helps to maintain the same workflow while on an intercontinental flight. However, even more interesting is that this approach also allows to use a cloud software that otherwise is considered insecure. For example, running a Wordpress setup locally to benefit from its nice UI in a local browser and export static web site content to push to the actual web hosting.&lt;/p&gt;
+
+&lt;p&gt;By lowering a barrier to use containerised applications through Podman Desktop we may hope to get more people join our community and contribute. Starting with Podman Desktop’s friendliness would allow these newcomers to discover other Fedora flavors and features. It is certainly an interesting aspect we could expand further in a way similar how this ‘F’ in Fedora got expanded in Mo’s presentation.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://vda.li/en/img/resized/2023-flock/podmandesktop-1-800-ecc520d5f.jpg&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;panel-upstream-collaboration--cooperation-in-the-enterprise-linux-ecosystem&quot;&gt;Panel: Upstream collaboration &amp;amp; cooperation in the Enterprise Linux ecosystem&lt;/h3&gt;
+
+&lt;p&gt;Another conference highlight was the panel that brought representatives of Fedora, RHEL, Rocky Linux, Alma Linux, and CentOS Stream together on stage. Distributions upstream and downstream of RHEL presented their views on various development and community topics. It is worth to &lt;a href=&quot;https://www.youtube.com/watch?v=r9iy9f80nic&amp;t=24804s&quot;&gt;watch the stream&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;state-of-epel&quot;&gt;State of EPEL&lt;/h3&gt;
+
+&lt;p&gt;Trow Dawson and Carl George did present another state of EPEL. EPEL has a solid contributors’ base who keep thousands of packages available to RHEL and downstream distributions’ users. EPEL is using Fedora infrastructure and for many packages it shares maintainers with Fedora (EPEL branches are branches in Fedora dist-git for the same package, if this package is not in RHEL). So all EPEL contributors are Fedora contributors. ;)&lt;/p&gt;
+
+&lt;p&gt;One interesting aspect in every “State of EPEL” talk is a long tail of the EPEL demographics. Much like “State of Fedora” shows demographics of Fedora releases, EPEL statistics includes details on who is running the lowest number of downstream systems:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://vda.li/en/img/resized/2023-flock/epelstate-1-800-5bf2b26ad.jpg&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;passwordless-fedora&quot;&gt;Passwordless Fedora&lt;/h3&gt;
+
+&lt;p&gt;My talk was on the morning of the second day. People were still recovering from the night of International Candy Swap and table games so at start I had may be a couple of attendies. Eventually, we’ve got more people in the room and there were also online attendees so it wasn’t so feeling so lonely.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://www.youtube.com/watch?v=GkYURkrIzx0&amp;t=3226s&quot;&gt;My talk&lt;/a&gt; was similar to previous ones at FOSDEM and SambaXP. What was new is a demo from Ray Strode on how potentially a user experience could look like in GNOME for a passwordless login. Ray implemented a prototype of external identity provider login flow that Allan Day &lt;a href=&quot;https://gitlab.gnome.org/Teams/Design/os-mockups/-/issues/220&quot;&gt;has shared recently&lt;/a&gt;. This flow could be used for login through Microsoft’s Entra ID (a.k.a. Azure AD) or any OAuth2 provider supported by FreeIPA. We aren’t fully there yet but the goal is to do this work once for GNOME and reuse for various passwordless authentication approaches supported through SSSD.&lt;/p&gt;
+
+&lt;p&gt;I also showed an &lt;a href=&quot;https://youtu.be/zK2FmP0j6tY&quot;&gt;old demo&lt;/a&gt; from my FOSDEM and Flock 2016. It shows how we integrated 2FA tokens (Yubikeys in this example) with FreeIPA to authenticate and obtain Kerberos tickets through a KDC proxy over HTTPS. These tickets then were used to login onto a VPN. This is something that is possible in Fedora and RHEL for almost a decade now.&lt;/p&gt;
+
+&lt;h3 id=&quot;openqa-hacking&quot;&gt;OpenQA hacking&lt;/h3&gt;
+
+&lt;p&gt;Before Flock, Adam Williamson started to work on integrating Samba AD tests into OpenQA for Fedora. It almost worked well but there were few issues Adam wasn’t able to resolve so we set down at the Flock and figured out at least few of those. The only remaining one was an apparent race condition within a test that enrolls a system to Samba AD using kickstart. SSSD, it seems, starts before networking is up and stable, and decides that it is offline. When the test tries to resolve an Active Directory user, SSSD fails to do so as it thinks to be offline.&lt;/p&gt;
+
+&lt;p&gt;Interestingly, the same test against FreeIPA works fine. The same test done past kickstart works fine as well, for both FreeIPA and Samba AD. There is probably a need to add a waiting period to settle a network state. We saw this in past too but never found a good way to trigger a proper event for SSSD to recover.&lt;/p&gt;
+
+&lt;h3 id=&quot;social-events&quot;&gt;Social events&lt;/h3&gt;
+
+&lt;p&gt;I am trying to reduce candy consumption so I skipped the social events on the first day but attended the conference dinner on the second day. All social events during the Flock well organized and this one wasn’t exception either. We had interesting discussions with Fedora and Rocky folks, getting to know there is a lot of similarity in how people do their lives across the world.&lt;/p&gt;
+
+&lt;p&gt;On Friday’s night another social event was a Ghost Tour. However, we skipped it and together with few other people went to do a bit of memorabilia road through another Mexican place and (of course!) a local bar. Life in IT and development in 90’s and early 2000’s weren’t that much different in US and Europe, really. Thanks to Spot and Amazon for covering the dinner, thanks to other folks for beer and a company.&lt;/p&gt;
+
+&lt;p&gt;I left on Saturday at noon using the same Aircoach bus towards Dublin airport. The bus was full – make sure you have booked your seat online in advance. My flight back to Finland was uneventful as well. Overall, it was a great conference, as usual. I’d like to say thank you to all volunteers and organizers who keep Flock so wonderful and Fedora project so welcoming. Thank you!&lt;/p&gt;</content>
+		<author>
+			<name>Alexander Bokovoy</name>
+			<uri>https://vda.li/en/</uri>
+		</author>
+		<source>
+			<title type="html">Far away to be identical</title>
+			<subtitle type="html">Identity management chaos or a development of a fun</subtitle>
+			<link rel="self" href="https://vda.li/en/freeipa.xml"/>
+			<id>https://vda.li/en/freeipa.xml</id>
+			<updated>2023-08-16T05:13:09+00:00</updated>
+		</source>
+	</entry>
 
 	<entry xml:lang="en">
 		<title type="html">Addressing cert-find performance</title>
@@ -23,7 +149,7 @@
 			<subtitle type="html">Frustrated rantings of a developer</subtitle>
 			<link rel="self" href="https://rcritten.wordpress.com/feed/"/>
 			<id>https://rcritten.wordpress.com/feed/</id>
-			<updated>2023-08-15T05:12:50+00:00</updated>
+			<updated>2023-08-16T05:13:14+00:00</updated>
 		</source>
 	</entry>
 
@@ -171,7 +297,7 @@ be the only ones to offer access to these new algorithms.&lt;/p&gt;
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -719,7 +845,7 @@ versions of RHEL.&lt;/p&gt;</content>
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2023-08-15T05:12:44+00:00</updated>
+			<updated>2023-08-16T05:13:09+00:00</updated>
 		</source>
 	</entry>
 
@@ -845,7 +971,7 @@ schema&lt;/a&gt;.&lt;/p&gt;</content>
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2023-08-15T05:12:44+00:00</updated>
+			<updated>2023-08-16T05:13:09+00:00</updated>
 		</source>
 	</entry>
 
@@ -854,7 +980,7 @@ schema&lt;/a&gt;.&lt;/p&gt;</content>
 		<link href="https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra-2/"/>
 		<id>https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra-2/</id>
 		<updated>2022-10-28T06:50:00+00:00</updated>
-		<content type="html">&lt;p&gt;This article continues the &lt;a href=&quot;https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra/&quot;&gt;discussion&lt;/a&gt;
+		<content type="html">&lt;p&gt;This article continues the &lt;a href=&quot;https://vda.li/en/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra/&quot;&gt;discussion&lt;/a&gt;
 about FreeIPA authentication improvements and how they could benefit Fedora
 Infrastructure.&lt;/p&gt;
 
@@ -986,7 +1112,7 @@ like we were all before with Linux on the desktop.&lt;/p&gt;</content>
 			<subtitle type="html">Identity management chaos or a development of a fun</subtitle>
 			<link rel="self" href="https://vda.li/en/freeipa.xml"/>
 			<id>https://vda.li/en/freeipa.xml</id>
-			<updated>2023-08-15T05:12:43+00:00</updated>
+			<updated>2023-08-16T05:13:09+00:00</updated>
 		</source>
 	</entry>
 
@@ -1081,7 +1207,7 @@ need to pay it if the Fedora project chooses to raise the requirements. Perhaps,
 companies benefiting from the secure software development processes around
 Fedora distribution would be willing to step up?&lt;/p&gt;
 
-&lt;p&gt;In &lt;a href=&quot;https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra-2/&quot;&gt;the next article&lt;/a&gt;
+&lt;p&gt;In &lt;a href=&quot;https://vda.li/en/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra-2/&quot;&gt;the next article&lt;/a&gt;
 I will look at how FreeIPA could help with the technical side of supporting
 Webauthn/FIDO2 use by Fedora contributors.&lt;/p&gt;</content>
 		<author>
@@ -1093,7 +1219,7 @@ Webauthn/FIDO2 use by Fedora contributors.&lt;/p&gt;</content>
 			<subtitle type="html">Identity management chaos or a development of a fun</subtitle>
 			<link rel="self" href="https://vda.li/en/freeipa.xml"/>
 			<id>https://vda.li/en/freeipa.xml</id>
-			<updated>2023-08-15T05:12:43+00:00</updated>
+			<updated>2023-08-16T05:13:09+00:00</updated>
 		</source>
 	</entry>
 
@@ -1292,7 +1418,7 @@ processing.&lt;/p&gt;</content>
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2023-08-15T05:12:44+00:00</updated>
+			<updated>2023-08-16T05:13:09+00:00</updated>
 		</source>
 	</entry>
 
@@ -1461,7 +1587,7 @@ openstack user list -f yaml  --domain freeipa
 			<subtitle type="html">The Notebook of a Programmer Climber Musician Ex-Soldier Woodworker and a few other things</subtitle>
 			<link rel="self" href="http://adam.younglogic.com/category/software/freeipa,kerberos,ldap/feed/"/>
 			<id>http://adam.younglogic.com/category/software/freeipa,kerberos,ldap/feed/</id>
-			<updated>2023-08-15T05:12:42+00:00</updated>
+			<updated>2023-08-16T05:13:08+00:00</updated>
 		</source>
 	</entry>
 
@@ -1832,7 +1958,7 @@ feature work will be determined later.&lt;/p&gt;</content>
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2023-08-15T05:12:44+00:00</updated>
+			<updated>2023-08-16T05:13:09+00:00</updated>
 		</source>
 	</entry>
 
@@ -2166,7 +2292,7 @@ future investigations.&lt;/p&gt;</content>
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2023-08-15T05:12:44+00:00</updated>
+			<updated>2023-08-16T05:13:09+00:00</updated>
 		</source>
 	</entry>
 
@@ -2185,7 +2311,7 @@ future investigations.&lt;/p&gt;</content>
 			<subtitle type="html">Sharing knowledge on Identity Management</subtitle>
 			<link rel="self" href="https://floblanc.wordpress.com/tag/freeipa/feed/"/>
 			<id>https://floblanc.wordpress.com/tag/freeipa/feed/</id>
-			<updated>2023-08-15T05:12:43+00:00</updated>
+			<updated>2023-08-16T05:13:09+00:00</updated>
 		</source>
 	</entry>
 
@@ -2204,7 +2330,7 @@ future investigations.&lt;/p&gt;</content>
 			<subtitle type="html">Recent content on Nathaniel McCallum</subtitle>
 			<link rel="self" href="https://npmccallum.gitlab.io/index.xml"/>
 			<id>https://npmccallum.gitlab.io/index.xml</id>
-			<updated>2023-08-15T05:12:45+00:00</updated>
+			<updated>2023-08-16T05:13:11+00:00</updated>
 		</source>
 	</entry>
 
@@ -2501,7 +2627,7 @@ eventually.&lt;/p&gt;</content>
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2023-08-15T05:12:44+00:00</updated>
+			<updated>2023-08-16T05:13:09+00:00</updated>
 		</source>
 	</entry>
 
@@ -2659,7 +2785,7 @@ official OpenShift documentation.&lt;/p&gt;</content>
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2023-08-15T05:12:44+00:00</updated>
+			<updated>2023-08-16T05:13:09+00:00</updated>
 		</source>
 	</entry>
 
@@ -3085,7 +3211,7 @@ soon!&lt;/p&gt;</content>
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2023-08-15T05:12:44+00:00</updated>
+			<updated>2023-08-16T05:13:09+00:00</updated>
 		</source>
 	</entry>
 
@@ -3193,7 +3319,7 @@ concept for user-namespaced systemd workloads on OpenShift.&lt;/p&gt;</content>
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2023-08-15T05:12:44+00:00</updated>
+			<updated>2023-08-16T05:13:09+00:00</updated>
 		</source>
 	</entry>
 
@@ -3468,7 +3594,7 @@ modified &lt;code&gt;runc&lt;/code&gt; onto worker nodes, I will get on with tes
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2023-08-15T05:12:44+00:00</updated>
+			<updated>2023-08-16T05:13:09+00:00</updated>
 		</source>
 	</entry>
 
@@ -3538,7 +3664,7 @@ certutil  -d . -D -n &quot;Certificate Authority - HOME.YOUNGLOGIC.NET
 			<subtitle type="html">The Notebook of a Programmer Climber Musician Ex-Soldier Woodworker and a few other things</subtitle>
 			<link rel="self" href="http://adam.younglogic.com/category/software/freeipa,kerberos,ldap/feed/"/>
 			<id>http://adam.younglogic.com/category/software/freeipa,kerberos,ldap/feed/</id>
-			<updated>2023-08-15T05:12:42+00:00</updated>
+			<updated>2023-08-16T05:13:08+00:00</updated>
 		</source>
 	</entry>
 
@@ -3826,7 +3952,7 @@ for the right realm name. Remember that Kerberos realm is case-sensitive and alm
 			<subtitle type="html">Identity management chaos or a development of a fun</subtitle>
 			<link rel="self" href="https://vda.li/en/freeipa.xml"/>
 			<id>https://vda.li/en/freeipa.xml</id>
-			<updated>2023-08-15T05:12:43+00:00</updated>
+			<updated>2023-08-16T05:13:09+00:00</updated>
 		</source>
 	</entry>
 
@@ -3844,7 +3970,7 @@ for the right realm name. Remember that Kerberos realm is case-sensitive and alm
 			<title type="html">freeipa – jhrozek</title>
 			<link rel="self" href="https://jhrozek.wordpress.com/tag/freeipa,sssd,ldap,idm/feed/"/>
 			<id>https://jhrozek.wordpress.com/tag/freeipa,sssd,ldap,idm/feed/</id>
-			<updated>2023-08-15T05:12:44+00:00</updated>
+			<updated>2023-08-16T05:13:10+00:00</updated>
 		</source>
 	</entry>
 
@@ -3918,7 +4044,7 @@ be in person at FOSDEM, streaming will be available too.&lt;/p&gt;
 			<subtitle type="html">Identity management chaos or a development of a fun</subtitle>
 			<link rel="self" href="https://vda.li/en/freeipa.xml"/>
 			<id>https://vda.li/en/freeipa.xml</id>
-			<updated>2023-08-15T05:12:43+00:00</updated>
+			<updated>2023-08-16T05:13:09+00:00</updated>
 		</source>
 	</entry>
 
@@ -3963,7 +4089,7 @@ error=&quot;undefined method `[]' for nil:NilClass&quot; plugin_id=&quot;object:
 			<subtitle type="html">Nunc Fluens - LiveJournal.com</subtitle>
 			<link rel="self" href="https://richmegginson.livejournal.com/data/rss/"/>
 			<id>https://richmegginson.livejournal.com/data/rss/</id>
-			<updated>2023-08-15T05:12:49+00:00</updated>
+			<updated>2023-08-16T05:13:14+00:00</updated>
 		</source>
 	</entry>
 
@@ -3982,7 +4108,7 @@ error=&quot;undefined method `[]' for nil:NilClass&quot; plugin_id=&quot;object:
 			<subtitle type="html">Random Things</subtitle>
 			<link rel="self" href="https://strikerttd.wordpress.com/tag/freeipa,sssd,ldap,idm/feed/"/>
 			<id>https://strikerttd.wordpress.com/tag/freeipa,sssd,ldap,idm/feed/</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:16+00:00</updated>
 		</source>
 	</entry>
 
@@ -4135,7 +4261,7 @@ probe sdap_search_send = process(&lt;span class=&quot;hljs-string&quot;&gt;&quot
 			<title type="html">Justintime Blog</title>
 			<link rel="self" href="http://justin-stephenson.blogspot.com/feeds/posts/default?alt=rss"/>
 			<id>tag:blogger.com,1999:blog-8317082414319754746</id>
-			<updated>2023-08-15T05:12:44+00:00</updated>
+			<updated>2023-08-16T05:13:10+00:00</updated>
 		</source>
 	</entry>
 
@@ -4154,7 +4280,7 @@ probe sdap_search_send = process(&lt;span class=&quot;hljs-string&quot;&gt;&quot
 			<subtitle type="html">Identity management chaos or a development of a fun</subtitle>
 			<link rel="self" href="https://vda.li/en/freeipa.xml"/>
 			<id>https://vda.li/en/freeipa.xml</id>
-			<updated>2023-08-15T05:12:43+00:00</updated>
+			<updated>2023-08-16T05:13:09+00:00</updated>
 		</source>
 	</entry>
 
@@ -4214,7 +4340,7 @@ probe sdap_search_send = process(&lt;span class=&quot;hljs-string&quot;&gt;&quot
 			<subtitle type="html">Nunc Fluens - LiveJournal.com</subtitle>
 			<link rel="self" href="https://richmegginson.livejournal.com/data/rss/"/>
 			<id>https://richmegginson.livejournal.com/data/rss/</id>
-			<updated>2023-08-15T05:12:49+00:00</updated>
+			<updated>2023-08-16T05:13:14+00:00</updated>
 		</source>
 	</entry>
 
@@ -4243,7 +4369,7 @@ children. Also, his wife tolerates him.&lt;/p&gt;</content>
 			<subtitle type="html">Recent content on Nathaniel McCallum</subtitle>
 			<link rel="self" href="https://npmccallum.gitlab.io/index.xml"/>
 			<id>https://npmccallum.gitlab.io/index.xml</id>
-			<updated>2023-08-15T05:12:45+00:00</updated>
+			<updated>2023-08-16T05:13:11+00:00</updated>
 		</source>
 	</entry>
 
@@ -4264,7 +4390,7 @@ children. Also, his wife tolerates him.&lt;/p&gt;</content>
 			<subtitle type="html">Identity management chaos or a development of a fun</subtitle>
 			<link rel="self" href="https://vda.li/en/freeipa.xml"/>
 			<id>https://vda.li/en/freeipa.xml</id>
-			<updated>2023-08-15T05:12:43+00:00</updated>
+			<updated>2023-08-16T05:13:09+00:00</updated>
 		</source>
 	</entry>
 
@@ -4637,124 +4763,7 @@ technical one.&lt;/p&gt;</content>
 			<subtitle type="html">Identity management chaos or a development of a fun</subtitle>
 			<link rel="self" href="https://vda.li/en/freeipa.xml"/>
 			<id>https://vda.li/en/freeipa.xml</id>
-			<updated>2023-08-15T05:12:43+00:00</updated>
-		</source>
-	</entry>
-
-	<entry>
-		<title type="html">Single sign-on into virtual machines on Linux</title>
-		<link href="https://vda.li/en/posts/2016/05/30/Single-sign-on-to-virtual-machines/"/>
-		<id>https://vda.li/en/posts/2016/05/30/Single-sign-on-to-virtual-machines/</id>
-		<updated>2016-05-30T15:41:00+00:00</updated>
-		<content type="html">&lt;p&gt;This weekend I looked into making possible a single sign-on into Fedora 24
-guests running on libvirt/KVM. Suppose you have a libvirt-based server where a
-number VMs is deployed with VMs presenting graphical workstations. This
-is not far from what ovirt.org does (RHEV product). You want to have
-both your virtualization infrastructure and OS environments in VMs to be
-enrolled into FreeIPA and thus accessible with single sign-on from an
-external client.&lt;/p&gt;
-
-&lt;p&gt;There are several layers of single sign-on here. Once you signed into
-your external client, supposedly you have valid Kerberos credentials
-that can be used to obtain service tickets to other services in the
-realm.&lt;/p&gt;
-
-&lt;p&gt;Second layer is the connectivity to your virtualization infrastructure.
-This is possible already with libvirtd/Qemu as they both support SASL
-authentication. It is matter of setting appropriate configuration
-variables in /etc/libvirt/libvirtd.conf and /etc/libvirt/qemu.conf, and
-tuning /etc/sasl2/libvirt.conf and /etc/sasl2/qemu.conf to allow SASL
-GSSAPI authentication. You also need to create appropriate services in
-FreeIPA (libvirt/hostname, vnc/hostname, and spice/hostname) and obtain
-actual keys with ipa-getkeytab. This is all described relatively well in
-&lt;a href=&quot;http://www.freeipa.org/page/Libvirt_with_VNC_Consoles&quot;&gt;the FreeIPA libvirt howto&lt;/a&gt;.&lt;/p&gt;
-
-&lt;p&gt;Once configured, one can authenticate with SASL GSSAPI to VNC server
-using virt-manager UI or other VNC clients in GNOME that use gtk-vnc
-library. This works pretty well but only gives you access to the actual
-screen of the VM, not single sign-on into an operating system in the VM.&lt;/p&gt;
-
-&lt;p&gt;SPICE, on other hand, does not work with SASL GSSAPI. While SPICE server
-embedded into Qemu can be configured easily to listen for SASL GSSAPI,
-SPICE client libraries in GNOME don’t actually support SASL GSSAPI. In
-fact, the code is there, it is copied from gtk-vnc, but it does not
-work.&lt;/p&gt;
-
-&lt;p&gt;SPICE client code lacks actual sequence to obtain Kerberos identity out
-of existing ticket in a default credentials cache. As result, instead of
-authenticating with SASL GSSAPI, a user is left with a request to enter
-‘server password’ which is a concept built around existing SPICE
-authentication approach where both client and server share a single
-password.&lt;/p&gt;
-
-&lt;p&gt;After I fixed this problem by inquiring a Kerberos principal from the
-default ccache, SPICE is now working well in a way similar to VNC. I’ll
-submit patch to upstream once I have time for that.&lt;/p&gt;
-
-&lt;p&gt;This still doesn’t give any chance to actually log-in to the VM because
-both VNC and SPICE servers only represent fancy screens/input devices
-for the VMs. There is no existing way to pass through authentication via
-SPICE or VNC so that a software running in the VM would accept Kerberos
-ticket and authenticate a user based on that.&lt;/p&gt;
-
-&lt;p&gt;Here a concept of guest agent is introduced. Qemu has its own guest
-agent (&lt;a href=&quot;https://github.com/qemu/qemu/tree/master/qga&quot;&gt;here&lt;/a&gt;) which only supports
-a minimal set of commands needed to make virtualization management
-working. OVirt/RHEV have their own guest agent
-&lt;a href=&quot;https://github.com/oVirt/ovirt-guest-agent/&quot;&gt;here&lt;/a&gt; that supports much more
-than QEmu’s version and has own protocol. Finally, SPICE has own agent,
-vdagent, that supports even more operations related to use of graphical
-resources within the VM.&lt;/p&gt;
-
-&lt;p&gt;The idea behind these agents is to have a separate trusted channel into
-VM that can be used to query/execute something inside the VM. OVirt guest
-agent supports logon into the VM by plugging into PAM stack and into
-graphical greeters. When user asks OVirt portal to logon into a console of
-a VM, a login request can also be sent to the guest agent. This request
-doesn’t really present a single sign-on, as user have to enter actual
-credentials and then guest agent injects them into GDM, KDM, or console
-via D-Bus.&lt;/p&gt;
-
-&lt;p&gt;SPICE vdagent can inject both keyboard and mouse events, and even has
-systemd-login integration that allows it to query sessions to know which
-X session is used by which user so that mouse/keyboard events are
-properly injected. It doesn’t though, have a way to force GNOME GDM to
-create a new session automatically based on the credentials
-authenticated by the SPICE server.&lt;/p&gt;
-
-&lt;p&gt;It would, perhaps, be a good path forward to hack both SPICE server and
-vdagent to make possible use of delegated GSSAPI credentials to perform
-a logon into GDM. This would require support from GDM too but as OVirt
-experience shows, it is possible to create a GDM plugin to help with the
-task. The goal is to have such logon triggered on opening of the SPICE
-session if GDM is running and no session is available yet. As result of
-such logon, valid Kerberos credentials would need to appear in the
-system so that further use of them would be possible. This means
-delegation of the credentials – something that SPICE or VNC doesn’t
-support either (but SASL GSSAPI allows to achieve, it is a single flag
-change and a policy at KDC to define).&lt;/p&gt;
-
-&lt;p&gt;There is another technology to remotely access other systems – RDesktop
-protocol. XFreeRDP project has experimental patches to support GSSAPI.
-They don’t work yet, but I have good progress on them to make SSO
-possible.&lt;/p&gt;
-
-&lt;p&gt;So in the end, current implementations don’t allow actual single sign-on in a
-way that would allow using Kerberos credentials in and out of VMs. To make that
-possible, more work is needed. It looks like extending vdagent to be able to
-pass Kerberos ccache content to SSSD via PAM sessiona and trigger that from the
-greeter plugins as developed in OVirt we could actually reach the point with
-less effort than creating something from scratch.&lt;/p&gt;</content>
-		<author>
-			<name>Alexander Bokovoy</name>
-			<uri>https://vda.li/en/</uri>
-		</author>
-		<source>
-			<title type="html">Far away to be identical</title>
-			<subtitle type="html">Identity management chaos or a development of a fun</subtitle>
-			<link rel="self" href="https://vda.li/en/freeipa.xml"/>
-			<id>https://vda.li/en/freeipa.xml</id>
-			<updated>2023-08-15T05:12:43+00:00</updated>
+			<updated>2023-08-16T05:13:09+00:00</updated>
 		</source>
 	</entry>
 
@@ -4794,7 +4803,7 @@ all the talks available online.&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -4812,7 +4821,7 @@ all the talks available online.&lt;/p&gt;</content>
 			<title type="html">SSSD – preichl</title>
 			<link rel="self" href="https://preichl.wordpress.com/tag/sssd/feed/"/>
 			<id>https://preichl.wordpress.com/tag/sssd/feed/</id>
-			<updated>2023-08-15T05:12:46+00:00</updated>
+			<updated>2023-08-16T05:13:12+00:00</updated>
 		</source>
 	</entry>
 
@@ -4874,7 +4883,7 @@ drop me a note.&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -5004,7 +5013,7 @@ servers.&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -5096,7 +5105,7 @@ on after lunch ...&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -5142,7 +5151,7 @@ improve its use and usability.&lt;p&gt;&lt;/p&gt;&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -5369,7 +5378,7 @@ of the Kerberos protocol.&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -5494,7 +5503,7 @@ HTTPS at least.&lt;/p&gt;
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -5607,7 +5616,7 @@ Evolution)&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -5676,7 +5685,7 @@ fun and very productive time, what more can you ask for as a nerd type ?&lt;/p&g
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -5717,7 +5726,7 @@ break :-) but it was exciting to work so deep into GSSAPI code.&lt;/p&gt;</conte
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -5857,7 +5866,7 @@ administrators and the risks involved in the traditional delegation scheme.&lt;/
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -6028,7 +6037,7 @@ rebasing features of git to fix whatever need fixing quite easily.&lt;/font&gt;&
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -6131,7 +6140,7 @@ stay if you want to develop core infrastructure technology.&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -6203,7 +6212,7 @@ philosophically :-)&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -6246,7 +6255,7 @@ scenario, but I still need to do some more research first.&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -6279,7 +6288,7 @@ took me a lot less than I anticipated, and I usually underestimate :-)&lt;/p&gt;
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -6330,7 +6339,7 @@ branches:
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -6368,7 +6377,7 @@ somewhere too …)&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -6407,7 +6416,7 @@ work-related projects, so it may take quite some time or forever ...&lt;/p&gt;</
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -6435,7 +6444,7 @@ to have home made pizza.&lt;/p&gt;
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -6533,7 +6542,7 @@ ago.&lt;/p&gt;
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2023-08-15T05:12:51+00:00</updated>
+			<updated>2023-08-16T05:13:15+00:00</updated>
 		</source>
 	</entry>
 
