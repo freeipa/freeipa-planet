@@ -13,6 +13,7 @@
 
 	<items>
 		<rdf:Seq>
+			<rdf:li rdf:resource="https://vda.li/en/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/" />
 			<rdf:li rdf:resource="https://vda.li/en/posts/2023/08/11/Flock-report/" />
 			<rdf:li rdf:resource="http://rcritten.wordpress.com/?p=403" />
 			<rdf:li rdf:resource="tag:ssimo.org.blog:id_022" />
@@ -42,7 +43,6 @@
 			<rdf:li rdf:resource="https://richmegginson.livejournal.com/29454.html" />
 			<rdf:li rdf:resource="https://npmccallum.gitlab.io/about/" />
 			<rdf:li rdf:resource="https://vda.li/en/posts/2016/11/02/FreeIPA-JSON-RPC-API-article/" />
-			<rdf:li rdf:resource="https://vda.li/en/posts/2016/08/30/Creating-permissions-in-FreeIPA/" />
 			<rdf:li rdf:resource="tag:ssimo.org.blog:id_021" />
 			<rdf:li rdf:resource="http://preichl.wordpress.com/?p=43" />
 			<rdf:li rdf:resource="tag:ssimo.org.blog:id_020" />
@@ -69,6 +69,211 @@
 	</items>
 </channel>
 
+<item rdf:about="https://vda.li/en/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/">
+	<title>Alexander Bokovoy: Multi-homed FreeIPA server investigation</title>
+	<link>https://vda.li/en/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/</link>
+	<content:encoded>&lt;p&gt;Once in a while people come and ask for FreeIPA servers to work in multi-homed
+environments. A multi-homed environment in this context is a deployment where
+the same server is accessible through multiple network interfaces which connect
+together networks which are not routable to each other. This is typical for
+administrative and operational networks but there are other types of
+environments which employ disconnected networks for their operations. FreeIPA
+server right now has a single host name that resolves to the same IP address in
+all networks and if one cannot reach the server through that IP address, access
+to IPA server would not be possible. This typically assumes use of unicast
+networking as well.&lt;/p&gt;
+
+&lt;p&gt;A solution many people look for is to be able to access IPA servers by their
+interface-specific addresses. Since all secure communication over HTTPS and other
+protocols (LDAP, Kerberos, etc.) uses name-based resolution in the first place,
+use of different host names is implied. For example, if FreeIPA is deployed at
+DNS domain &lt;code&gt;example.test&lt;/code&gt;, it would be using Kerberos realm &lt;code&gt;EXAMPLE.TEST&lt;/code&gt; and
+then the original IPA server would be deployed at a host named
+&lt;code&gt;ipa.example.test&lt;/code&gt; (the server host name is not that important here, rather the
+fact that is is an individual host name). Let’s look at possible communications
+with this server in a non-multihomed environment first.&lt;/p&gt;
+
+&lt;h2 id=&quot;single-homed-environment&quot;&gt;Single-homed environment&lt;/h2&gt;
+
+&lt;p&gt;An IPA client uses HTTPS to communicate with IPA management API, SSSD on the
+IPA client would use LDAP(S) and Kerberos protocols. In both HTTPS and LDAP(S)
+cases TLS negotiation would force checking server TLS certificate correctness.
+A hostname of the host we connect to (&lt;code&gt;ipa.example.test&lt;/code&gt;) would have to be
+present as a dNS SAN record in the TLS certificate presented by the IPA server.&lt;/p&gt;
+
+&lt;p&gt;In Kerberos protocol case a different mechanism is used. Yet, Kerberos KDC must
+know the name of the service principal that a client is asking a service ticket
+for. If the client wants to acquire a service ticket to
+&lt;code&gt;ldap/ipa.example.test@EXAMPLE.TEST&lt;/code&gt;, this service principal must exist in the
+Kerberos database that KDC is looking up at.&lt;/p&gt;
+
+&lt;h2 id=&quot;multi-homed-environment&quot;&gt;Multi-homed environment&lt;/h2&gt;
+
+&lt;p&gt;There are multiple ways of exposing a single hostname in multi-homed
+environment but they generally involve use of DNS views specific to the
+individual networking. In such cases DNS serves visible to clients in one
+network would resolve &lt;code&gt;ipa.example.test&lt;/code&gt; to an IP address in that specific
+network. FreeIPA DNS integration does not support DNS views; this means any of
+DNS manipulations would have to be done externally to FreeIPA. This is, of
+course possible, but it really is not then different from a single-homed
+environment from FreeIPA perspective.&lt;/p&gt;
+
+&lt;p&gt;Thus, we would have to have not a single &lt;code&gt;ipa.example.test&lt;/code&gt; hostname but for
+each independent network’s address present on the IPA server a different host
+name must be present. Let’s assume these are &lt;code&gt;ipa1.example.test&lt;/code&gt; and
+&lt;code&gt;ipa2.example.test&lt;/code&gt;. Had we not done this split and simply added multiple
+addresses for the same &lt;code&gt;ipa.example.test&lt;/code&gt; name, clients might resolve the name
+to an IP address which they could not reach through their own networking routing.&lt;/p&gt;
+
+&lt;h2 id=&quot;requirements&quot;&gt;Requirements&lt;/h2&gt;
+
+&lt;p&gt;Immediately we get a set of requirements here:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;TLS certificates issued by IPA CA for HTTPS and LDAP(S) use on IPA server
+must include dNS SAN records for each hostname represented by the
+multi-homed server.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Kerberos principals for at least LDAP (&lt;code&gt;ldap/&lt;/code&gt;), HTTP (&lt;code&gt;HTTP/&lt;/code&gt;), and the
+system (&lt;code&gt;host/&lt;/code&gt;) service principals must have aliases for all multi-homed
+hostnames.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The latter requirement means that if &lt;code&gt;ipa1.example.test&lt;/code&gt; is the primary name,
+then &lt;code&gt;ldap/ipa1.example.test&lt;/code&gt; should have an alias of &lt;code&gt;ldap/ipa2.example.test&lt;/code&gt;,
+&lt;code&gt;HTTP/ipa1.example.test&lt;/code&gt; should have an alias of &lt;code&gt;HTTP/ipa2.example.test&lt;/code&gt;, and
+&lt;code&gt;host/ipa1.example.test&lt;/code&gt; should have an alias of &lt;code&gt;host/ipa2.example.test&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;The same would apply to any other service hosted on IPA server: SMB (&lt;code&gt;cifs/..&lt;/code&gt;)
+or DNS services would need those aliases as well. However, this is not enough.&lt;/p&gt;
+
+&lt;h2 id=&quot;implementation-considerations&quot;&gt;Implementation considerations&lt;/h2&gt;
+
+&lt;h3 id=&quot;hostname-aliases&quot;&gt;Hostname aliases&lt;/h3&gt;
+&lt;p&gt;FreeIPA does additional checks when issuing certificiates prior to passing the
+request to the Dogtag CA that is integrated into FreeIPA. For hosts and
+services on those hosts we also check whether a requestor is granted to issue
+these certificates. In FreeIPA terms, a host &lt;code&gt;ipa1.example.test&lt;/code&gt; would be
+allowed to issue certificates with dNS SAN record of &lt;code&gt;ipa2.example.test&lt;/code&gt; if a
+host object of &lt;code&gt;ipa1.example.test&lt;/code&gt; manages the host object &lt;code&gt;ipa2.example.test&lt;/code&gt;
+in FreeIPA.&lt;/p&gt;
+
+&lt;p&gt;Here lies our first problem. A host object in FreeIPA represents the host
+principal in Kerberos, &lt;code&gt;host/ipa1.example.test&lt;/code&gt;. If we created two host
+objects, &lt;code&gt;ipa1.example.test&lt;/code&gt; and &lt;code&gt;ipa2.example.test&lt;/code&gt;, then they cannot be
+aliases to each other on Kerberos level because they’d be two completely
+different objects from FreeIPA perspective.&lt;/p&gt;
+
+&lt;p&gt;Perhaps, we can avoid creating two different host objects? DNS records for
+hosts are different from the host objects themselves, we only need to have
+different IP addresses for the hostnames represented by these host entries, not
+the host entries themselves. May be we could mark one hostname an alias of the
+other host object?&lt;/p&gt;
+
+&lt;p&gt;On Kerberos level FreeIPA does have Kebreros principal name aliasing already.
+However, it does not exist for hosts as this task has never appeared in past. We
+would need to add a way to add multiple names to the host object. One way to
+achieve that is to rely on the fact that &lt;code&gt;fqdn&lt;/code&gt; LDAP attribute is multi-valued.
+Unfortunately, it is also enforced to be a primary key in IPA API – while the
+underlying LDAP attribute is a multi-valued one, IPA API will enforce its single
+value:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-shell&quot;&gt;$ ipa host-mod ipa1.example.test --addattr fqdn=ipa2.example.test
+ipa: ERROR: fqdn: Only one value allowed.
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This happens because in IPA API any parameter which could be a multi-valued one
+should explicitly set &lt;code&gt;multivalue=True&lt;/code&gt; in its definition. We probably would
+need to change the multi-valued state for &lt;code&gt;fqdn&lt;/code&gt; parameter:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;...
+        Str('fqdn', hostname_validator,
+            cli_name='hostname',
+            label=_('Host name'),
+            primary_key=True,
+            normalizer=normalize_hostname,
+&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt;&amp;gt;      multivalue=True,
+        ),
+...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;and review countless places where its single value is assumed through the code,
+like in the &lt;code&gt;resolve_fqdn()&lt;/code&gt; helper below. LDAP does not guarantee a particular
+order of returned values for the multi-valued attributes. From LDAP protocol
+point of view they all equal, there is no particular order.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-python&quot;&gt;def resolve_fqdn(name):
+    hostentry = api.Command['host_show'](name)['result']
+    return hostentry['fqdn'][0]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;An alternative would be to introduce a separate attribute purely for the
+hostname alias management. We don’t need to use it anywhere else at Kerberos
+level because there we use Kerberos-specific attributes to handle Kerberos
+principal names and aliases.&lt;/p&gt;
+
+&lt;h3 id=&quot;ldap-access-controls&quot;&gt;LDAP Access Controls&lt;/h3&gt;
+
+&lt;p&gt;A big part of the FreeIPA access control mechanism relies on 389-ds LDAP server
+access control interface. Permissions and roles in FreeIPA effectively define a
+set of ACIs for 389-ds to check access rights. IPA servers verified to be
+present in certain resource groups (like &lt;code&gt;cn=masters,cn=ipa,cn=etc,$BASEDN&lt;/code&gt;).
+For host aliases this means they should be present in the same groups to be able
+to operate as their own entities when checking permissions. This is important
+for internal logic in IPA LDAP plugins and in KDC driver. For the cases when
+authentication would be done via GSSAPI a resulting Kerberos principal will be
+normalized to he primary name of the system anyway.&lt;/p&gt;
+
+&lt;h3 id=&quot;certificate-issuance&quot;&gt;Certificate issuance&lt;/h3&gt;
+
+&lt;p&gt;Issuing a certificate is a whole separate topic which still awaits its write
+up. An abridged version of it can be found in &lt;a href=&quot;https://lists.fedorahosted.org/archives/list/freeipa-users@lists.fedorahosted.org/message/7NAZ2AT7FXXVBL42DTKJHCUQNOJBZB27/&quot;&gt;my freeipa-users@ mailing list
+response&lt;/a&gt;
+from May 2022. I need to turn that into a proper document one day.&lt;/p&gt;
+
+&lt;p&gt;From the perspective of aliases, we would need to teach the certificate request
+processing code to look at the host and service aliases when validating SAN
+records.&lt;/p&gt;
+
+&lt;h3 id=&quot;installer-integration&quot;&gt;Installer integration&lt;/h3&gt;
+
+&lt;p&gt;There are two approaches to setting up this multi-homed environment. We can
+provide all information upfront or we can add a tool that adds individual
+aliases after deployment. This would mean to (re-)generate certificates, create
+host aliases and services, create configuration snippets and other details which
+are required to handle multiple host names for the same host from different
+networks.&lt;/p&gt;
+
+&lt;p&gt;The after-deployment case would cause re-issuance of certificates. For external
+CA providers it could be handled with existing tool that allows to replace
+existing TLS certificates with externally provided ones. We need to create a
+checker to verify that all required dNS SAN names were added and are available.
+In general, troubleshooting this environment would be non-trivial so a special
+module for &lt;code&gt;ipa-healthcheck&lt;/code&gt; definitely would help.&lt;/p&gt;
+
+&lt;h2 id=&quot;final-thoughts&quot;&gt;Final thoughts&lt;/h2&gt;
+
+&lt;p&gt;Multi-homed environments are hard to automate as many assumptions aren’t
+actually known to us. They are partly implicit to system and network
+administrator’s work and cannot be derived merely from the system state. It
+means administrators would need to aid IPA installers with an information. At
+this point, it is unclear how to structure this information and which of it
+going to be useful enough. In contemporary Linux environments you might have
+DNS resolution depend on a specific network interface thanks to
+&lt;code&gt;systemd-resolved&lt;/code&gt; or VPN connection properties. We might not have that
+information for introspection in advance. While automatically issuing
+certificates with required names to cover multi-homed setup is not going to be
+easy, writing down requirements for external CAs and verifying those
+certificates before applying them at the second stage of external CA enrollment
+would further complicate things.&lt;/p&gt;
+
+&lt;p&gt;All these problems could be solved, of course. Prioritization of this work
+against other, more urging tasks, is what we need to figure first…&lt;/p&gt;</content:encoded>
+	<dc:date>2023-08-16T07:04:00+00:00</dc:date>
+</item>
 <item rdf:about="https://vda.li/en/posts/2023/08/11/Flock-report/">
 	<title>Alexander Bokovoy: Flock to Fedora 2023 report</title>
 	<link>https://vda.li/en/posts/2023/08/11/Flock-report/</link>
@@ -4078,366 +4283,6 @@ children. Also, his wife tolerates him.&lt;/p&gt;</content:encoded>
 
 &lt;p&gt;The article is available in a new documentation section so that it stays independent of the blog. I plan to extend the API documentation and add more details later. The document assumes you are using FreeIPA 4.4 or later which is available in upcoming Fedora 25 and RHEL 7.3 releases.&lt;/p&gt;</content:encoded>
 	<dc:date>2016-11-02T14:00:00+00:00</dc:date>
-</item>
-<item rdf:about="https://vda.li/en/posts/2016/08/30/Creating-permissions-in-FreeIPA/">
-	<title>Alexander Bokovoy: Creating permissions in FreeIPA</title>
-	<link>https://vda.li/en/posts/2016/08/30/Creating-permissions-in-FreeIPA/</link>
-	<content:encoded>&lt;p&gt;FreeIPA has quite flexible system to define access rights for any resources in
-the LDAP store. The system consists of three different parts:&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;a permission object&lt;/li&gt;
-  &lt;li&gt;a privilege object, and&lt;/li&gt;
-  &lt;li&gt;a role object.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Permission object specifies the target of the access grant: what attributes of
-which objects in LDAP would be subject of the checks.&lt;/p&gt;
-
-&lt;p&gt;A privilege allows to combine several permissions together in a logical task. A
-role defines who can have access to privileges.&lt;/p&gt;
-
-&lt;p&gt;An example below is a somewhat complex use of the permission system to allow
-groups of administrators to manage specific hosts. We want administrators in
-group ‘my-admins’ to manage hosts in ‘my-hostgroup’ but otherwise have no other
-privileges.&lt;/p&gt;
-
-&lt;p&gt;Let’s start with a host group ‘my-hostgroup’:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# ipa hostgroup-add my-hostgroup
------------------------------
-Added hostgroup &quot;my-hostgroup&quot;
------------------------------
-  Host-group: my-hostgroup
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;And with a group ‘my-admins’:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# ipa group-add my-admins
------------------------
-Added group &quot;my-admins&quot;
------------------------
-  Group name: my-admins
-  GID: 903200040
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;A member of ‘my-admins’ should be able to edit all attributes of the hosts in
-the host group ‘my-hostgroup’.&lt;/p&gt;
-
-&lt;p&gt;To manage permissions, use &lt;code&gt;ipa permission&lt;/code&gt; family of commands. You need to
-create a basic permission which applies to hosts:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# ipa permission-add manage-my-hostgroup --right=all --bindtype=permission --type=host
---------------------------------------
-Added permission &quot;manage-my-hostgroup&quot;
---------------------------------------
-  Permission name: manage-my-hostgroup
-  Granted rights: all
-  Bind rule type: permission
-  Subtree: cn=computers,cn=accounts,dc=ipa,dc=ad,dc=test
-  Type: host
-  Permission flags: V2, SYSTEM
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;A permission automatically generates an access control item (ACI) in the LDAP.
-To check all low-level details of the permission, use &lt;code&gt;--all&lt;/code&gt; and &lt;code&gt;--raw&lt;/code&gt;
-options:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# ipa permission-show --all --raw manage-my-hostgroup
-  dn: cn=manage-my-hostgroup,cn=permissions,cn=pbac,dc=ipa,dc=ad,dc=test
-  cn: manage-my-hostgroup
-  ipapermright: all
-  ipapermbindruletype: permission
-  ipapermlocation: cn=computers,cn=accounts,dc=ipa,dc=ad,dc=test
-  ipapermtargetfilter: (objectclass=ipahost)
-  ipapermissiontype: V2
-  ipapermissiontype: SYSTEM
-  aci: (targetfilter = &quot;(objectclass=ipahost)&quot;)
-       (version 3.0; acl &quot;permission:manage-my-hostgroup&quot;;
-                     allow (all)
-                     groupdn = &quot;ldap:///cn=manage-my-hostgroup,cn=permissions,cn=pbac,dc=ipa,dc=ad,dc=test&quot;;)
-  objectclass: ipapermission
-  objectclass: top
-  objectclass: groupofnames
-  objectclass: ipapermissionv2
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;As you can see, it applies to hosts: cn=computers,cn=accounts,$SUFFIX
-subtree, and target filter is set to (objectclass=ipahost). So it would
-apply to any host. To further limit the permission, you have to add more
-target filters.&lt;/p&gt;
-
-&lt;p&gt;To define raw target filter, we need to know a DN of the hostgroup that
-will be our target limit:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# ipa hostgroup-show --raw --all my-hostgroup
-  dn: cn=my-hostgroup,cn=hostgroups,cn=accounts,dc=ipa,dc=ad,dc=test
-  cn: my-hostgroup
-  ipaUniqueID: 6d8c72f2-6e6d-11e6-b9e4-525400bf08fe
-  mepManagedEntry: cn=my-hostgroup,cn=ng,cn=alt,dc=ipa,dc=ad,dc=test
-  objectClass: ipahostgroup
-  objectClass: ipaobject
-  objectClass: nestedGroup
-  objectClass: groupOfNames
-  objectClass: top
-  objectClass: mepOriginEntry
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Using the DN of the &lt;code&gt;my-hostgroup&lt;/code&gt;, we can now add a filter to the
-permission:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# ipa permission-mod manage-my-hostgroup --filter '(memberOf=cn=my-hostgroup,cn=hostgroups,cn=accounts,dc=ipa,dc=ad,dc=test)'
------------------------------------------
-Modified permission &quot;manage-my-hostgroup&quot;
------------------------------------------
-  Permission name: manage-my-hostgroup
-  Granted rights: all
-  Bind rule type: permission
-  Subtree: cn=computers,cn=accounts,dc=ipa,dc=ad,dc=test
-  Extra target filter: (memberOf=cn=my-hostgroup,cn=hostgroups,cn=accounts,dc=ipa,dc=ad,dc=test)
-  Type: host
-  Permission flags: V2, SYSTEM
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Take a look at the permission in detail:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# ipa permission-show --all --raw manage-my-hostgroup
-  dn: cn=manage-my-hostgroup,cn=permissions,cn=pbac,dc=ipa,dc=ad,dc=test
-  cn: manage-my-hostgroup
-  ipapermright: all
-  ipapermbindruletype: permission
-  ipapermlocation: cn=computers,cn=accounts,dc=ipa,dc=ad,dc=test
-  ipapermtargetfilter: (objectclass=ipahost)
-  ipapermtargetfilter: (memberOf=cn=my-hostgroup,cn=hostgroups,cn=accounts,dc=ipa,dc=ad,dc=test)
-  ipapermissiontype: V2
-  ipapermissiontype: SYSTEM
-  aci: (targetfilter = &quot;(&amp;amp;(memberOf=cn=my-hostgroup,cn=hostgroups,cn=accounts,dc=ipa,dc=ad,dc=test)(objectclass=ipahost))&quot;)
-       (version 3.0;acl &quot;permission:manage-my-hostgroup&quot;;
-        allow (all) groupdn = &quot;ldap:///cn=manage-my-hostgroup,cn=permissions,cn=pbac,dc=ipa,dc=ad,dc=test&quot;;)
-  objectclass: ipapermission
-  objectclass: top
-  objectclass: groupofnames
-  objectclass: ipapermissionv2
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Our ACI says: “Allow any changes to be done in all objects of
-objectclass ipahost that belong to a host group &lt;code&gt;my-hostgroup&lt;/code&gt; to members
-of the permission group &lt;code&gt;manage-my-hostgroup&lt;/code&gt;”&lt;/p&gt;
-
-&lt;p&gt;Now you can add the &lt;code&gt;manage-my-hostgroup&lt;/code&gt; permission to a new privilege
-and add that privilege to a role, and then assign users of the group &lt;code&gt;my-admins&lt;/code&gt;
-to that role. Those users will be able to manage hosts targeted by the permission.&lt;/p&gt;
-
-&lt;p&gt;Start with a privilege:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# ipa privilege-add 'manage-hostgroup-my-hostgroup'
------------------------------------------------
-Added privilege &quot;manage-hostgroup-my-hostgroup&quot;
------------------------------------------------
-  Privilege name: manage-hostgroup-my-hostgroup
-
-# ipa privilege-add-permission 'manage-hostgroup-my-hostgroup'
-[permission]: manage-my-hostgroup
-  Privilege name: manage-hostgroup-my-hostgroup
-  Permissions: manage-my-hostgroup
------------------------------
-Number of permissions added 1
------------------------------
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Finally, create a role and add a privilege to it, and then add members that could
-use the privilege:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# ipa role-add role-manage-hostgroup-my-hostgroup
------------------------------------------------
-Added role &quot;role-manage-hostgroup-my-hostgroup&quot;
------------------------------------------------
-  Role name: role-manage-hostgroup-my-hostgroup
-
-# ipa role-add-privilege role-manage-hostgroup-my-hostgroup
-[privilege]: manage-hostgroup-my-hostgroup
-  Role name: role-manage-hostgroup-my-hostgroup
-  Privileges: manage-hostgroup-my-hostgroup
-----------------------------
-Number of privileges added 1
-----------------------------
-
-# ipa role-add-member role-manage-hostgroup-my-hostgroup --groups=my-admins
-  Role name: role-manage-hostgroup-my-hostgroup
-  Member groups: my-admins
-  Privileges: manage-hostgroup-my-hostgroup
--------------------------
-Number of members added 1
--------------------------
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;If we look at the original permission, we can see it is now an indirect member
-of a role:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# ipa permission-show manage-my-hostgroup
-  Permission name: manage-my-hostgroup
-  Granted rights: all
-  Bind rule type: permission
-  Subtree: cn=computers,cn=accounts,dc=ipa,dc=ad,dc=test
-  Extra target filter: (memberOf=cn=my-hostgroup,cn=hostgroups,cn=accounts,dc=ipa,dc=ad,dc=test)
-  Type: host
-  Permission flags: V2, SYSTEM
-  Granted to Privilege: manage-hostgroup-my-hostgroup
-  Indirect Member of roles: role-manage-hostgroup-my-hostgroup
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;When user is added to the &lt;code&gt;my-admins&lt;/code&gt; group, it automatically assumes a role
-that allows to manage the host group:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# ipa user-add hadmin
-First name: Joe
-Last name: Doe
--------------------
-Added user &quot;hadmin&quot;
--------------------
-  User login: hadmin
-  First name: Joe
-  Last name: Doe
-  Full name: Joe Doe
-  Display name: Joe Doe
-  Initials: JD
-  Home directory: /home/hadmin
-  GECOS: Joe Doe
-  Login shell: /bin/sh
-  Principal name: hadmin@IPA.AD.TEST
-  Principal alias: hadmin@IPA.AD.TEST
-  Email address: hadmin@ipa.ad.test
-  UID: 903200041
-  GID: 903200041
-  Password: False
-  Member of groups: ipausers
-  Kerberos keys available: False
-
-# ipa group-add-member my-admins --users=hadmin
-  Group name: my-admins
-  GID: 903200040
-  Member users: hadmin
-  Roles: role-manage-hostgroup-my-hostgroup
--------------------------
-Number of members added 1
--------------------------
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;In real life scenario we would probably like to tune our permission a bit more.
-For example, we definitely don’t want to allow full access to all attributes of
-the host – if users can write to &lt;code&gt;objectclass&lt;/code&gt; attribute, they can turn that
-host into anything else in LDAP. But before tuning it, we need to see if our
-permission actually works:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# kinit hadmin
-Password for hadmin@IPA.AD.TEST:
-
-# ipa host-mod my-host --random
-ipa: ERROR: Insufficient access: Insufficient 'write' privilege to the 'userPassword' 
-            attribute of entry 'fqdn=my-host.ipa.ad.test,cn=computers,cn=accounts,dc=ipa,dc=ad,dc=test'.
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Oops, it does not work – we cannot write to a &lt;code&gt;userPassword&lt;/code&gt; attribute of the
-host. What is wrong? To answer this question we need to look at the
-documentation of the LDAP server FreeIPA builds upon: &lt;a href=&quot;http://www.port389.org/&quot;&gt;389-ds&lt;/a&gt;.
-&lt;a href=&quot;https://access.redhat.com/documentation/en-US/Red_Hat_Directory_Server/10/html/Administration_Guide/Managing_Access_Control-Creating_ACIs_Manually.html#Defining_Targets-Targeting_Entries_or_Attributes_Using_LDAP_Filters&quot;&gt;Red Hat Directory Server Administration Guide&lt;/a&gt; 
-says the following in the section “Targeting Entries or Attributes Using LDAP Filters”:&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;Note
-Although using LDAP filters can be useful when you are targeting entries and
-attributes that are spread across the directory, the results are sometimes
-unpredictable because filters do not directly name the object for which you
-are managing access. The set of entries targeted by a filtered ACI is likely
-to change as attributes are added or deleted. Therefore, if you use LDAP
-filters in ACIs, you should verify that they target the correct entries and
-attributes by using the same filter in an ldapsearch operation.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;The documentation doesn’t tell this explicitly, but when &lt;code&gt;targetattr&lt;/code&gt; is missing, the
-default for matching target attributes when matching with target filter for
-modification is &lt;code&gt;none&lt;/code&gt;, not &lt;code&gt;*&lt;/code&gt;. This is done to deny &lt;code&gt;modrdn&lt;/code&gt; (entry rename).&lt;/p&gt;
-
-&lt;p&gt;To allow modification of the host entries, we need to list attributes which
-can be modified by our host group admins. The list below is an example only: it
-allows to set meta-data about the host, change one-time enrollment password,
-assigned ID view, add certificates and SSH public keys. One needs to carefully review
-what attributes should be allowed to modify.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# kinit admin
-Password for admin@IPA.AD.TEST: 
-
-# ipa permission-mod manage-my-hostgroup --attrs={'userPassword','description','l',\
-               'nshardwareplatform','nsosversion','usercertificate','userclass',\
-               'macaddress','ipaassignedidview','ipasshpubkey'}
------------------------------------------
-Modified permission &quot;manage-my-hostgroup&quot;
------------------------------------------
-  Permission name: manage-my-hostgroup
-  Granted rights: all
-  Effective attributes: description, ipaassignedidview, ipakrbauthzdata, ipasshpubkey,
-                        l, macaddress, nshardwareplatform, nsosversion, userPassword,
-                        usercertificate, userclass
-  Bind rule type: permission
-  Subtree: cn=computers,cn=accounts,dc=ipa,dc=ad,dc=test
-  Extra target filter: (memberOf=cn=my-hostgroup,cn=hostgroups,cn=accounts,dc=ipa,dc=ad,dc=test)
-  Type: host
-  Permission flags: V2, SYSTEM
-  Granted to Privilege: manage-hostgroup-my-hostgroup
-  Indirect Member of roles: role-manage-hostgroup-my-hostgroup
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;With these changes, our admin can now set a random one-time password:&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# kinit hadmin
-Password for hadmin@IPA.AD.TEST:
-
-# ipa host-mod my-host --random
------------------------
-Modified host &quot;my-host&quot;
------------------------
-  Host name: my-host.ipa.ad.test
-  Random password: 5Krkbj_eW7UR@SUxj0lx22
-  Principal name: host/my-host.ipa.ad.test@IPA.AD.TEST
-  Principal alias: host/my-host.ipa.ad.test@IPA.AD.TEST
-  Password: True
-  Member of host-groups: my-hostgroup
-  Keytab: False
-  Managed by: my-host.ipa.ad.test
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;However, this is not all. The permission we created above doesn’t answer a very
-important question: how the host &lt;code&gt;my-host&lt;/code&gt; would appear in the host group? We
-surely want to be able to add and remove hosts from the host group.  But if we
-create a permission that allows per-hostgroup admins to add and remove members
-of the host group at will, they could take over any host – by simply adding it
-in the host group they manage.&lt;/p&gt;
-
-&lt;p&gt;An easiest way to solve this problem, no surprise, is organizational: do not
-give host group admin rights to include hosts to the hostgroup or delete them,
-only allow them to manage what’s in the host group.&lt;/p&gt;
-
-&lt;p&gt;A separation of rights requires to create a separate permission for ‘add’/’del’
-rights against ‘member’ attribute that would allow to include/remove hosts.
-That’s easy but it would not allow us to limit &lt;em&gt;what&lt;/em&gt; hosts could be
-added/removed from the host group.&lt;/p&gt;
-
-&lt;p&gt;Unfortunately, to make that possible, permission-add/permission-mod
-should be extended to allow specifying target attribute’s values like
-described in the &lt;a href=&quot;https://access.redhat.com/documentation/en-US/Red_Hat_Directory_Server/10/html/Administration_Guide/Managing_Access_Control-Creating_ACIs_Manually.html#Defining_Targets-Targeting_Attribute_Values_Using_LDAP_Filters&quot;&gt;RHDS Administration Guide&lt;/a&gt;.&lt;/p&gt;
-
-&lt;p&gt;Even then to define something like this, we’d need to have specific
-naming of hosts to be able to specify a pattern as a ‘member’ attribute
-value.&lt;/p&gt;
-
-&lt;p&gt;An alternative is to use automembership rules, defined with &lt;code&gt;ipa automember&lt;/code&gt;
-family of commands. It might work with predictable host names but would
-probably be hard to implement in case of host names coming out of existing
-cloud provider where you don’t have control over the undercloud.&lt;/p&gt;
-
-&lt;p&gt;This is why I’m saying it is an organizational issue, not really a
-technical one.&lt;/p&gt;</content:encoded>
-	<dc:date>2016-08-30T05:00:00+00:00</dc:date>
 </item>
 <item rdf:about="tag:ssimo.org.blog:id_021">
 	<title>Simo Sorce: Distributing Secrets with Custodia</title>

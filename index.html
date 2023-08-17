@@ -23,6 +23,241 @@
 <h1><a href="http://www.freeipa.org/"><img src="images/logo.png" width="220" height="68" alt=""></a>FreeIPA Identity Management planet - technical blogs</h1>
 
 <div class="daygroup">
+<h2>August 16, 2023</h2>
+
+<div class="channelgroup">
+
+
+
+
+
+
+
+<h3><a href="https://vda.li/en/" title="Far away to be identical">Alexander Bokovoy</a></h3>
+
+
+<div class="entrygroup" id="https://vda.li/en/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/">
+<h4><a href="https://vda.li/en/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/">Multi-homed FreeIPA server investigation</a></h4>
+<div class="entry">
+<div class="content">
+<p>Once in a while people come and ask for FreeIPA servers to work in multi-homed
+environments. A multi-homed environment in this context is a deployment where
+the same server is accessible through multiple network interfaces which connect
+together networks which are not routable to each other. This is typical for
+administrative and operational networks but there are other types of
+environments which employ disconnected networks for their operations. FreeIPA
+server right now has a single host name that resolves to the same IP address in
+all networks and if one cannot reach the server through that IP address, access
+to IPA server would not be possible. This typically assumes use of unicast
+networking as well.</p>
+
+<p>A solution many people look for is to be able to access IPA servers by their
+interface-specific addresses. Since all secure communication over HTTPS and other
+protocols (LDAP, Kerberos, etc.) uses name-based resolution in the first place,
+use of different host names is implied. For example, if FreeIPA is deployed at
+DNS domain <code>example.test</code>, it would be using Kerberos realm <code>EXAMPLE.TEST</code> and
+then the original IPA server would be deployed at a host named
+<code>ipa.example.test</code> (the server host name is not that important here, rather the
+fact that is is an individual host name). Let’s look at possible communications
+with this server in a non-multihomed environment first.</p>
+
+<h2 id="single-homed-environment">Single-homed environment</h2>
+
+<p>An IPA client uses HTTPS to communicate with IPA management API, SSSD on the
+IPA client would use LDAP(S) and Kerberos protocols. In both HTTPS and LDAP(S)
+cases TLS negotiation would force checking server TLS certificate correctness.
+A hostname of the host we connect to (<code>ipa.example.test</code>) would have to be
+present as a dNS SAN record in the TLS certificate presented by the IPA server.</p>
+
+<p>In Kerberos protocol case a different mechanism is used. Yet, Kerberos KDC must
+know the name of the service principal that a client is asking a service ticket
+for. If the client wants to acquire a service ticket to
+<code>ldap/ipa.example.test@EXAMPLE.TEST</code>, this service principal must exist in the
+Kerberos database that KDC is looking up at.</p>
+
+<h2 id="multi-homed-environment">Multi-homed environment</h2>
+
+<p>There are multiple ways of exposing a single hostname in multi-homed
+environment but they generally involve use of DNS views specific to the
+individual networking. In such cases DNS serves visible to clients in one
+network would resolve <code>ipa.example.test</code> to an IP address in that specific
+network. FreeIPA DNS integration does not support DNS views; this means any of
+DNS manipulations would have to be done externally to FreeIPA. This is, of
+course possible, but it really is not then different from a single-homed
+environment from FreeIPA perspective.</p>
+
+<p>Thus, we would have to have not a single <code>ipa.example.test</code> hostname but for
+each independent network’s address present on the IPA server a different host
+name must be present. Let’s assume these are <code>ipa1.example.test</code> and
+<code>ipa2.example.test</code>. Had we not done this split and simply added multiple
+addresses for the same <code>ipa.example.test</code> name, clients might resolve the name
+to an IP address which they could not reach through their own networking routing.</p>
+
+<h2 id="requirements">Requirements</h2>
+
+<p>Immediately we get a set of requirements here:</p>
+
+<ul>
+  <li>
+    <p>TLS certificates issued by IPA CA for HTTPS and LDAP(S) use on IPA server
+must include dNS SAN records for each hostname represented by the
+multi-homed server.</p>
+  </li>
+  <li>
+    <p>Kerberos principals for at least LDAP (<code>ldap/</code>), HTTP (<code>HTTP/</code>), and the
+system (<code>host/</code>) service principals must have aliases for all multi-homed
+hostnames.</p>
+  </li>
+</ul>
+
+<p>The latter requirement means that if <code>ipa1.example.test</code> is the primary name,
+then <code>ldap/ipa1.example.test</code> should have an alias of <code>ldap/ipa2.example.test</code>,
+<code>HTTP/ipa1.example.test</code> should have an alias of <code>HTTP/ipa2.example.test</code>, and
+<code>host/ipa1.example.test</code> should have an alias of <code>host/ipa2.example.test</code>.</p>
+
+<p>The same would apply to any other service hosted on IPA server: SMB (<code>cifs/..</code>)
+or DNS services would need those aliases as well. However, this is not enough.</p>
+
+<h2 id="implementation-considerations">Implementation considerations</h2>
+
+<h3 id="hostname-aliases">Hostname aliases</h3>
+<p>FreeIPA does additional checks when issuing certificiates prior to passing the
+request to the Dogtag CA that is integrated into FreeIPA. For hosts and
+services on those hosts we also check whether a requestor is granted to issue
+these certificates. In FreeIPA terms, a host <code>ipa1.example.test</code> would be
+allowed to issue certificates with dNS SAN record of <code>ipa2.example.test</code> if a
+host object of <code>ipa1.example.test</code> manages the host object <code>ipa2.example.test</code>
+in FreeIPA.</p>
+
+<p>Here lies our first problem. A host object in FreeIPA represents the host
+principal in Kerberos, <code>host/ipa1.example.test</code>. If we created two host
+objects, <code>ipa1.example.test</code> and <code>ipa2.example.test</code>, then they cannot be
+aliases to each other on Kerberos level because they’d be two completely
+different objects from FreeIPA perspective.</p>
+
+<p>Perhaps, we can avoid creating two different host objects? DNS records for
+hosts are different from the host objects themselves, we only need to have
+different IP addresses for the hostnames represented by these host entries, not
+the host entries themselves. May be we could mark one hostname an alias of the
+other host object?</p>
+
+<p>On Kerberos level FreeIPA does have Kebreros principal name aliasing already.
+However, it does not exist for hosts as this task has never appeared in past. We
+would need to add a way to add multiple names to the host object. One way to
+achieve that is to rely on the fact that <code>fqdn</code> LDAP attribute is multi-valued.
+Unfortunately, it is also enforced to be a primary key in IPA API – while the
+underlying LDAP attribute is a multi-valued one, IPA API will enforce its single
+value:</p>
+
+<pre><code class="language-shell">$ ipa host-mod ipa1.example.test --addattr fqdn=ipa2.example.test
+ipa: ERROR: fqdn: Only one value allowed.
+</code></pre>
+
+<p>This happens because in IPA API any parameter which could be a multi-valued one
+should explicitly set <code>multivalue=True</code> in its definition. We probably would
+need to change the multi-valued state for <code>fqdn</code> parameter:</p>
+
+<pre><code class="language-python">...
+        Str('fqdn', hostname_validator,
+            cli_name='hostname',
+            label=_('Host name'),
+            primary_key=True,
+            normalizer=normalize_hostname,
+&gt;&gt;&gt;&gt;&gt;&gt;      multivalue=True,
+        ),
+...
+</code></pre>
+
+<p>and review countless places where its single value is assumed through the code,
+like in the <code>resolve_fqdn()</code> helper below. LDAP does not guarantee a particular
+order of returned values for the multi-valued attributes. From LDAP protocol
+point of view they all equal, there is no particular order.</p>
+
+<pre><code class="language-python">def resolve_fqdn(name):
+    hostentry = api.Command['host_show'](name)['result']
+    return hostentry['fqdn'][0]
+</code></pre>
+
+<p>An alternative would be to introduce a separate attribute purely for the
+hostname alias management. We don’t need to use it anywhere else at Kerberos
+level because there we use Kerberos-specific attributes to handle Kerberos
+principal names and aliases.</p>
+
+<h3 id="ldap-access-controls">LDAP Access Controls</h3>
+
+<p>A big part of the FreeIPA access control mechanism relies on 389-ds LDAP server
+access control interface. Permissions and roles in FreeIPA effectively define a
+set of ACIs for 389-ds to check access rights. IPA servers verified to be
+present in certain resource groups (like <code>cn=masters,cn=ipa,cn=etc,$BASEDN</code>).
+For host aliases this means they should be present in the same groups to be able
+to operate as their own entities when checking permissions. This is important
+for internal logic in IPA LDAP plugins and in KDC driver. For the cases when
+authentication would be done via GSSAPI a resulting Kerberos principal will be
+normalized to he primary name of the system anyway.</p>
+
+<h3 id="certificate-issuance">Certificate issuance</h3>
+
+<p>Issuing a certificate is a whole separate topic which still awaits its write
+up. An abridged version of it can be found in <a href="https://lists.fedorahosted.org/archives/list/freeipa-users@lists.fedorahosted.org/message/7NAZ2AT7FXXVBL42DTKJHCUQNOJBZB27/">my freeipa-users@ mailing list
+response</a>
+from May 2022. I need to turn that into a proper document one day.</p>
+
+<p>From the perspective of aliases, we would need to teach the certificate request
+processing code to look at the host and service aliases when validating SAN
+records.</p>
+
+<h3 id="installer-integration">Installer integration</h3>
+
+<p>There are two approaches to setting up this multi-homed environment. We can
+provide all information upfront or we can add a tool that adds individual
+aliases after deployment. This would mean to (re-)generate certificates, create
+host aliases and services, create configuration snippets and other details which
+are required to handle multiple host names for the same host from different
+networks.</p>
+
+<p>The after-deployment case would cause re-issuance of certificates. For external
+CA providers it could be handled with existing tool that allows to replace
+existing TLS certificates with externally provided ones. We need to create a
+checker to verify that all required dNS SAN names were added and are available.
+In general, troubleshooting this environment would be non-trivial so a special
+module for <code>ipa-healthcheck</code> definitely would help.</p>
+
+<h2 id="final-thoughts">Final thoughts</h2>
+
+<p>Multi-homed environments are hard to automate as many assumptions aren’t
+actually known to us. They are partly implicit to system and network
+administrator’s work and cannot be derived merely from the system state. It
+means administrators would need to aid IPA installers with an information. At
+this point, it is unclear how to structure this information and which of it
+going to be useful enough. In contemporary Linux environments you might have
+DNS resolution depend on a specific network interface thanks to
+<code>systemd-resolved</code> or VPN connection properties. We might not have that
+information for introspection in advance. While automatically issuing
+certificates with required names to cover multi-homed setup is not going to be
+easy, writing down requirements for external CAs and verifying those
+certificates before applying them at the second stage of external CA enrollment
+would further complicate things.</p>
+
+<p>All these problems could be solved, of course. Prioritization of this work
+against other, more urging tasks, is what we need to figure first…</p></div>
+
+
+
+
+
+
+
+<p class="date">
+<a href="https://vda.li/en/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/">August 16, 2023 07:04 AM</a>
+</p>
+</div>
+</div>
+
+
+</div>
+
+</div>
+<div class="daygroup">
 <h2>August 11, 2023</h2>
 
 <div class="channelgroup">
@@ -295,7 +530,7 @@ Striker Leggette	</a>
 
 <h2>Last updated</h2>
 <p>
-August 16, 2023 05:13 AM<br>
+August 17, 2023 05:12 AM<br>
 <em>All times are UTC.</em><br>
 </p>
 
