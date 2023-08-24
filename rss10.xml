@@ -13,6 +13,7 @@
 
 	<items>
 		<rdf:Seq>
+			<rdf:li rdf:resource="http://floblanc.wordpress.com/?p=1730" />
 			<rdf:li rdf:resource="https://vda.li/en/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/" />
 			<rdf:li rdf:resource="https://vda.li/en/posts/2023/08/11/Flock-report/" />
 			<rdf:li rdf:resource="http://rcritten.wordpress.com/?p=403" />
@@ -25,7 +26,6 @@
 			<rdf:li rdf:resource="http://adam.younglogic.com/?p=10285" />
 			<rdf:li rdf:resource="https://frasertweedale.github.io/blog-redhat/posts/2022-03-24-k8s-external-dns.html" />
 			<rdf:li rdf:resource="https://frasertweedale.github.io/blog-redhat/posts/2022-02-02-openshift-user-ns-without-anyuid.html" />
-			<rdf:li rdf:resource="http://floblanc.wordpress.com/?p=1684" />
 			<rdf:li rdf:resource="https://npmccallum.gitlab.io/post/" />
 			<rdf:li rdf:resource="https://frasertweedale.github.io/blog-redhat/posts/2021-11-18-k8s-tcp-udp-ingress.html" />
 			<rdf:li rdf:resource="https://frasertweedale.github.io/blog-redhat/posts/2021-10-15-openshift-userns-in-container.html" />
@@ -69,6 +69,12 @@
 	</items>
 </channel>
 
+<item rdf:about="http://floblanc.wordpress.com/?p=1730">
+	<title>Florence Blanc-Renaud: Interoperability of RHEL 7/8/9 IdM server and RHEL 7/8/9 IdM client</title>
+	<link></link>
+	<content:encoded>As their IdM deployment expands over time with the addition of new IdM clients or new IdM servers and replicas, customers often have a mixed topology containing various RHEL versions. This blog post describes the version requirements and limitations that can be seen in these mixed topologies. General version requirements In the general case, it &amp;#8230; &lt;a href=&quot;https://floblanc.wordpress.com/2023/08/23/interoperability-of-rhel-7-8-9-idm-server-and-rhel-7-8-9-idm-client/&quot; class=&quot;more-link&quot;&gt;Continue reading &lt;span class=&quot;screen-reader-text&quot;&gt;Interoperability of RHEL 7/8/9 IdM server and RHEL 7/8/9 IdM client&lt;/span&gt; &lt;span class=&quot;meta-nav&quot;&gt;&amp;#8594;&lt;/span&gt;&lt;/a&gt;</content:encoded>
+	<dc:date>2023-08-23T09:34:31+00:00</dc:date>
+</item>
 <item rdf:about="https://vda.li/en/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/">
 	<title>Alexander Bokovoy: Multi-homed FreeIPA server investigation</title>
 	<link>https://vda.li/en/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/</link>
@@ -2418,12 +2424,6 @@ SCC, which is a significant erosion of the security boundaries
 between containers and the host. This issue will be the subject of
 future investigations.&lt;/p&gt;</content:encoded>
 	<dc:date>2022-02-02T00:00:00+00:00</dc:date>
-</item>
-<item rdf:about="http://floblanc.wordpress.com/?p=1684">
-	<title>Florence Blanc-Renaud: ID range management in IPA</title>
-	<link></link>
-	<content:encoded>POSIX IDs and IPA Local domain range IPA is an identity management solution that allows to centrally define users and groups. As it operates in Linux environments, the users and groups are defined with a name and a POSIX ID (a numeric value), that are used for access control: each file belongs to a user &amp;#8230; &lt;a href=&quot;https://floblanc.wordpress.com/2021/11/27/id-range-management-in-ipa/&quot; class=&quot;more-link&quot;&gt;Continue reading &lt;span class=&quot;screen-reader-text&quot;&gt;ID range management in IPA&lt;/span&gt; &lt;span class=&quot;meta-nav&quot;&gt;&amp;#8594;&lt;/span&gt;&lt;/a&gt;</content:encoded>
-	<dc:date>2021-11-27T21:12:25+00:00</dc:date>
 </item>
 <item rdf:about="https://npmccallum.gitlab.io/post/">
 	<title>Nathaniel McCallum: Posts</title>

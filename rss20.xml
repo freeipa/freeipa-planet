@@ -8,6 +8,13 @@
 	<description>FreeIPA Identity Management planet - technical blogs - http://planet.freeipa.org/</description>
 
 <item>
+	<title>Florence Blanc-Renaud: Interoperability of RHEL 7/8/9 IdM server and RHEL 7/8/9 IdM client</title>
+	<guid>http://floblanc.wordpress.com/?p=1730</guid>
+	<link></link>
+	<description>As their IdM deployment expands over time with the addition of new IdM clients or new IdM servers and replicas, customers often have a mixed topology containing various RHEL versions. This blog post describes the version requirements and limitations that can be seen in these mixed topologies. General version requirements In the general case, it &amp;#8230; &lt;a href=&quot;https://floblanc.wordpress.com/2023/08/23/interoperability-of-rhel-7-8-9-idm-server-and-rhel-7-8-9-idm-client/&quot; class=&quot;more-link&quot;&gt;Continue reading &lt;span class=&quot;screen-reader-text&quot;&gt;Interoperability of RHEL 7/8/9 IdM server and RHEL 7/8/9 IdM client&lt;/span&gt; &lt;span class=&quot;meta-nav&quot;&gt;&amp;#8594;&lt;/span&gt;&lt;/a&gt;</description>
+	<pubDate>Wed, 23 Aug 2023 09:34:31 +0000</pubDate>
+</item>
+<item>
 	<title>Alexander Bokovoy: Multi-homed FreeIPA server investigation</title>
 	<guid>https://vda.li/en/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/</guid>
 	<link>https://vda.li/en/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/</link>
@@ -2368,13 +2375,6 @@ SCC, which is a significant erosion of the security boundaries
 between containers and the host. This issue will be the subject of
 future investigations.&lt;/p&gt;</description>
 	<pubDate>Wed, 02 Feb 2022 00:00:00 +0000</pubDate>
-</item>
-<item>
-	<title>Florence Blanc-Renaud: ID range management in IPA</title>
-	<guid>http://floblanc.wordpress.com/?p=1684</guid>
-	<link></link>
-	<description>POSIX IDs and IPA Local domain range IPA is an identity management solution that allows to centrally define users and groups. As it operates in Linux environments, the users and groups are defined with a name and a POSIX ID (a numeric value), that are used for access control: each file belongs to a user &amp;#8230; &lt;a href=&quot;https://floblanc.wordpress.com/2021/11/27/id-range-management-in-ipa/&quot; class=&quot;more-link&quot;&gt;Continue reading &lt;span class=&quot;screen-reader-text&quot;&gt;ID range management in IPA&lt;/span&gt; &lt;span class=&quot;meta-nav&quot;&gt;&amp;#8594;&lt;/span&gt;&lt;/a&gt;</description>
-	<pubDate>Sat, 27 Nov 2021 21:12:25 +0000</pubDate>
 </item>
 <item>
 	<title>Nathaniel McCallum: Posts</title>
