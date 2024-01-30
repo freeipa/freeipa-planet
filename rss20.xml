@@ -8,6 +8,13 @@
 	<description>FreeIPA Identity Management planet - technical blogs - http://planet.freeipa.org/</description>
 
 <item>
+	<title>Rob Crittenden: Debug output from NSS PKCS#11 wrapper</title>
+	<guid>http://rcritten.wordpress.com/?p=451</guid>
+	<link></link>
+	<description>To see which PKCS#11 functions NSS is calling when addressing data through a PKCS#11 module you first need a debug build of NSS. Set BUILD_OPT=1 in nss.spec and build in copr. $ git diffdiff &amp;#8211;git a/nss.spec b/nss.specindex cf6a0f7..19d6136 100644&amp;#8212; a/nss.spec+++ b/nss.spec@@ -362,7 +362,7 @@ export IN_TREE_FREEBL_HEADERS_FIRST=1export NSS_FORCE_FIPS=1 # Enable compiler optimizations and disable debugging code-export &amp;#8230; &lt;a href=&quot;https://rcritten.wordpress.com/2024/01/29/debug-output-from-nss-pkcs11-wrapper/&quot; class=&quot;more-link&quot;&gt;Continue reading &lt;span class=&quot;screen-reader-text&quot;&gt;Debug output from NSS PKCS#11 wrapper&lt;/span&gt; &lt;span class=&quot;meta-nav&quot;&gt;&amp;#8594;&lt;/span&gt;&lt;/a&gt;</description>
+	<pubDate>Mon, 29 Jan 2024 21:15:22 +0000</pubDate>
+</item>
+<item>
 	<title>Florence Blanc-Renaud: Interoperability of RHEL 7/8/9 IdM server and RHEL 7/8/9 IdM client</title>
 	<guid>http://floblanc.wordpress.com/?p=1730</guid>
 	<link></link>
@@ -333,13 +340,6 @@ against other, more urging tasks, is what we need to figure first…&lt;/p&gt;</
 
 &lt;p&gt;I left on Saturday at noon using the same Aircoach bus towards Dublin airport. The bus was full – make sure you have booked your seat online in advance. My flight back to Finland was uneventful as well. Overall, it was a great conference, as usual. I’d like to say thank you to all volunteers and organizers who keep Flock so wonderful and Fedora project so welcoming. Thank you!&lt;/p&gt;</description>
 	<pubDate>Fri, 11 Aug 2023 10:46:00 +0000</pubDate>
-</item>
-<item>
-	<title>Rob Crittenden: Addressing cert-find performance</title>
-	<guid>http://rcritten.wordpress.com/?p=403</guid>
-	<link></link>
-	<description>A number of related certificate integration issues were reported and fixed. They were most visible in the WebUi where we are used to relatively snappy responses to requests but were also prominent on the command-line. The issues were that if there were a lot of certificates, say five thousand, it could take 17 seconds or &amp;#8230; &lt;a href=&quot;https://rcritten.wordpress.com/2023/07/26/addressing-cert-find-performance/&quot; class=&quot;more-link&quot;&gt;Continue reading &lt;span class=&quot;screen-reader-text&quot;&gt;Addressing cert-find performance&lt;/span&gt; &lt;span class=&quot;meta-nav&quot;&gt;&amp;#8594;&lt;/span&gt;&lt;/a&gt;</description>
-	<pubDate>Wed, 26 Jul 2023 15:58:48 +0000</pubDate>
 </item>
 <item>
 	<title>Simo Sorce: OpenSSL 3.0 Providers and PKCS#11</title>
