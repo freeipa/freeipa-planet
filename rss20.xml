@@ -8,6 +8,163 @@
 	<description>FreeIPA Identity Management planet - technical blogs - http://planet.freeipa.org/</description>
 
 <item>
+	<title>Alexander Bokovoy: CentOS Connect 2024 report</title>
+	<guid>https://vda.li/en/posts/2024/02/13/CentOS-Connect-report/</guid>
+	<link>https://vda.li/en/posts/2024/02/13/CentOS-Connect-report/</link>
+	<description>&lt;p&gt;February 1st-4th I participated in two events in Brussels: CentOS Connect and
+FOSDEM. FOSDEM is getting closer to its quarter a century anniversary next
+year. With 67 mini-conferences and another 30 events around it, it is
+considered one of the largest conferences in Europe, any topic included. This
+report is about CentOS Connect.&lt;/p&gt;
+
+&lt;h2 id=&quot;centos-connect&quot;&gt;CentOS Connect&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://connect.centos.org&quot;&gt;CentOS Connect&lt;/a&gt; was a two-day event preceding
+FOSDEM. Organized by the CentOS project, it brought together contributors from
+multiple projects around CentOS Stream upstreams (such as Fedora Project) and
+downstreams (from Red Hat Enterprise Linux, AlmaLinux, Rocky Linux, and
+others), long-time users and community members. A lot of talks were given on
+both days and several special interest groups (SIGs) ran their workshops on the
+first day.&lt;/p&gt;
+
+&lt;h2 id=&quot;centos-integration-sig&quot;&gt;CentOS Integration SIG&lt;/h2&gt;
+
+&lt;p&gt;I have attended a workshop organized by the CentOS Integration SIG. The focus
+of this group is to define and run integration tests around CentOS Stream
+delivery to the public. While CentOS Stream composes are built using the
+messages on how RHEL next minor version is composed after being thoroughly
+tested by Red Hat’s quality engineering group, there is a value in testing
+CentOS Stream composes by other community members independently as their use
+cases might differ. Right now the set of tests is defined as a &lt;code&gt;t_functional&lt;/code&gt;
+suite maintained by the CentOS Core SIG but this suite is not enough for the
+complex scenarios.&lt;/p&gt;
+
+&lt;p&gt;The Integration SIG is looking at improving the situation. Two projects were
+present and interested in this work: RDO (RPM-based distribution of OpenStack)
+and RHEL Identity Management. Both teams have to deal with coordinated package
+deliveries across multiple components and both need to get multi-host
+deployments tested. RDO can be treated as a product built on top of CentOS
+Stream where its own RDO deliveries are installed on top of CentOS Stream
+images. RHEL Identity Management (IdM), on the other hand, is a part of RHEL.
+It is famously known as a ‘canary in the RHEL mine’ (thanks to Stephen
+Gallagher’s being poetic a decade ago): if anything is broken in RHEL, chances
+are it will be visible in RHEL IdM testing. With RHEL IdM integration scope
+expanding to provide passwordless desktop login support, this becomes even more
+important and also requires multi-host testing.&lt;/p&gt;
+
+&lt;p&gt;CentOS Integration SIG’s proposal to address these requirements is interesting.
+Since CentOS Stream compose event is independent of the tests, a proposal by
+Aleksandra Fedorova and Adam Samalik is to treat the compose event in a way
+similar to a normal development workflow. Producing CentOS Stream compose would
+generate a merge request of a metadata associated with it to a particular git
+repository. This merge request then can be reacted to by the various bots and
+individuals. Since CentOS Stream compose is public, it is already accessible to
+third-party developers to run their tests and report back the results. This way
+qualification of the compose promotion to CentOS Stream mirrors can be affected
+by all parties and will help to keep already published composes in a
+non-conflicting state.&lt;/p&gt;
+
+&lt;p&gt;Since most of the projects involved already have their own continuous
+integration systems, adding another trigger for those would be trivial. For
+RHEL IdM and its upstream components (FreeIPA, SSSD, 389-ds, Dogtag PKI, etc.)
+it would also be possible finally to react to changes to CentOS Stream well
+ahead of time too. In the past this was complicated by a relative turbulence in
+the CentOS Stream composes early in RHEL next minor release development time
+when everybody updates their code and stabilization needs a lot of
+coordination. I am looking forward to Aleksandra’s proposal to land in the
+Integration SIG’s materials soon.&lt;/p&gt;
+
+&lt;h2 id=&quot;centos-stream-and-epel&quot;&gt;CentOS Stream and EPEL&lt;/h2&gt;
+
+&lt;p&gt;Two talks, by Troy Dawson and Carl George, described the current state of EPEL
+repository and its future interactions with CentOS 10 Stream. Troy’s discussion
+was fun, as usual: a lot of statistics obtained from the DNF repository
+trackers shows that old habits are hard to get rid off and moving forward is a
+struggle to many users despite security and supportability challenges with
+older software. Both CentOS 7 and CentOS 8 Stream end of life dates are coming
+in 2024, adding enough pressure themselves to that.&lt;/p&gt;
+
+&lt;p&gt;There are interesting statistics from the EPEL evolution. In August 2023 at
+Flock to Fedora conference Troy and Carl pointed out that 727 packagers
+maintained 7298 packages in EPEL 7, 489 packagers handled 4968 packages in EPEL
+8, and 396 packagers were handling 5985 packages in EPEL 9. Half a year later
+we have 7874 packages in EPEL 7, 5108 packages in EPEL 8, and 6868 packages in
+EPEL 9. Pace seems to pick up EPEL 9 with upcoming end of life dates for older
+versions. Since soon only EPEL 9 and EPEL 10 would be actively built, there are
+probably more packagers that would be active in them as well.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://vda.li/en/img/resized/2024-centos-connect/epel-packages-800-2bb1c63e5.jpg&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;EPEL 10 is coming soon. It will bring a slight difference in package suffixes
+and overall reduction of complexity to packagers. It is great to see how close
+EPEL work tracks to ELN activities in Fedora. One thing worth noting is that
+every Fedora package maintainer is a potential EPEL maintainer as well because
+EPEL reuses Fedora infrastructure for package maintenance. Even if someone is
+not maintaining EPEL branches on their Fedora packages (I am not doing that
+myself – my packages are mostly in RHEL), it allows easy jump-in and
+collaboration. After all, if packages aren’t in RHEL but are in Fedora, their
+EPEL presence is just one git branch (and Fedora infrastructure ticket) away.&lt;/p&gt;
+
+&lt;h2 id=&quot;20-years-of-centos-project&quot;&gt;20 years of CentOS project&lt;/h2&gt;
+
+&lt;p&gt;First day of the CentOS Connect event ended with a party to celebrate 20 years
+of the CentOS Project. First release (“CentOS version 2”) went out on May 14th,
+2004 but since CentOS Connect is the closest big event organized by the project
+this year, getting a lot of contributors together to celebrate this anniversary
+seemed appropriate. A huge cake was presented, so big that it wasn’t possible
+to consume it completely during the party. It was delicious (like a lot of
+Belgian chocolate!) and next day coffee breaks allowed me to enjoy it a lot.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://vda.li/en/img/resized/2024-centos-connect/centos-20y-cake-800-92c46ff66.jpg&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;freeipa-and-centos-project-infrastructure&quot;&gt;FreeIPA and CentOS project infrastructure&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://talks.vda.li/talks/2024/CentOS-Connect-Discuss-Your-FreeIPA.pdf&quot;&gt;My own talk&lt;/a&gt; was originally planned to gather feedback from all projects which
+build on top of CentOS as they use a very similar infrastructure. CentOS
+Project infrastructure is shared with Fedora Project which is built around
+FreeIPA as a backend and Noggin as a user management frontend. I asked in
+advance for some feedback from Fedora, CentOS, AlmaLinux, and RockyLinux
+infrastructure teams and haven’t gotten that much which prompted my own
+investigation. It is not an easy job since most organizations aren’t really
+interested in telling the world details of their core infrastructure. Hope was
+that I’d be able to see real world usage and maybe take some lessons from it
+back to the development teams.&lt;/p&gt;
+
+&lt;p&gt;While working on my talk, we also experienced an outage in Fedora
+infrastructure related to the upgrade of the FreeIPA setup used there. My team
+has been helping Fedora infrastructure administrators so I finally got the
+feedback I was looking for. That led to several fixes upstream and they have
+recently been backported to RHEL and CentOS Stream as well. However, the
+overall lack of feedback is concerning – or at least I thought so.&lt;/p&gt;
+
+&lt;p&gt;During CentOS Connect I had the opportunity to discuss this with both AlmaLinux
+(Jonathan) and RockyLinux (Luis) projects’ sysadmins. “It just works” is a common
+response I get. Well, that’s nice to hear but what was more exciting to hear is
+that these projects went a bit further than we did in Fedora and CentOS Stream
+with their environments. Luis &lt;a href=&quot;https://talks.vda.li/talks/2024/CentOS-Connect-Discuss-Your-FreeIPA.pdf&quot;&gt;has published the whole RockyLinux infrastructure&lt;/a&gt;
+code responsible for FreeIPA deployment. It is based heavily on
+ansible-freeipa, reuses the same components we developed for Fedora
+Infrastructure. Rocky also runs FreeIPA tests in OpenQA instance, similarly to
+Fedora, and hopefully Luis would contribute more tests to cover passwordless
+login, already available in CentOS Stream. This would be a very welcome
+contribution in the light of the Integration SIG activities, helping us to test
+more complex scenarios community-wide. AlmaLinux infrastructure also uses
+ansible-freeipa but the code is not publicly available, for whatever reason.
+Jonathan promised to rectify this problem.&lt;/p&gt;
+
+&lt;h2 id=&quot;hallway-tracks&quot;&gt;Hallway tracks&lt;/h2&gt;
+
+&lt;p&gt;I had a number of discussions with people from all kinds of CentOS communities.
+FreeIPA sits at a unique position by providing secure infrastructure to run
+POSIX workloads and linking it with modern requirements to web authentication.
+Our effort to improve passwordless login to Linux environments with reuse of
+Kerberos to propagate authorization state across multiple machines helps to
+solve the ‘between the worlds’ problems. That is something that many academic
+institutions have noticed already and many talks I had in the hallways were
+related to it.&lt;/p&gt;</description>
+	<pubDate>Tue, 13 Feb 2024 07:25:00 +0000</pubDate>
+</item>
+<item>
 	<title>Rob Crittenden: Debug output from NSS PKCS#11 wrapper</title>
 	<guid>http://rcritten.wordpress.com/?p=451</guid>
 	<link></link>
