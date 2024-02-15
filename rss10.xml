@@ -136,6 +136,8 @@ when everybody updates their code and stabilization needs a lot of
 coordination. I am looking forward to Aleksandra’s proposal to land in the
 Integration SIG’s materials soon.&lt;/p&gt;
 
+&lt;p&gt;&lt;strong&gt;Update&lt;/strong&gt;: Aleksandra has published her proposal at the &lt;a href=&quot;https://discussion.fedoraproject.org/t/centos-connect-follow-up-proposal-for-the-git-interface-to-the-compose-gate/104981&quot;&gt;Fedora Discussion board&lt;/a&gt;&lt;/p&gt;
+
 &lt;h2 id=&quot;centos-stream-and-epel&quot;&gt;CentOS Stream and EPEL&lt;/h2&gt;
 
 &lt;p&gt;Two talks, by Troy Dawson and Carl George, described the current state of EPEL
