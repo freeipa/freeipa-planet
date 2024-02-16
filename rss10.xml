@@ -13,8 +13,8 @@
 
 	<items>
 		<rdf:Seq>
+			<rdf:li rdf:resource="http://rcritten.wordpress.com/?p=460" />
 			<rdf:li rdf:resource="https://vda.li/en/posts/2024/02/13/CentOS-Connect-report/" />
-			<rdf:li rdf:resource="http://rcritten.wordpress.com/?p=451" />
 			<rdf:li rdf:resource="http://floblanc.wordpress.com/?p=1730" />
 			<rdf:li rdf:resource="https://vda.li/en/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/" />
 			<rdf:li rdf:resource="https://vda.li/en/posts/2023/08/11/Flock-report/" />
@@ -70,6 +70,12 @@
 	</items>
 </channel>
 
+<item rdf:about="http://rcritten.wordpress.com/?p=460">
+	<title>Rob Crittenden: Understanding 389-ds access logging</title>
+	<link></link>
+	<content:encoded>The 389-ds access logs write multiple lines per connection. The contents of the logging will vary in particular based on the bind type (simple, over TLS, GSSAPI, etc). Each line will typically consist of the date, a connection id, the operation and the result. Because there may be simultaneous connections their operations are likely to &amp;#8230; &lt;a href=&quot;https://rcritten.wordpress.com/2024/02/15/understanding-389-ds-access-logging/&quot; class=&quot;more-link&quot;&gt;Continue reading &lt;span class=&quot;screen-reader-text&quot;&gt;Understanding 389-ds access logging&lt;/span&gt; &lt;span class=&quot;meta-nav&quot;&gt;&amp;#8594;&lt;/span&gt;&lt;/a&gt;</content:encoded>
+	<dc:date>2024-02-15T18:38:03+00:00</dc:date>
+</item>
 <item rdf:about="https://vda.li/en/posts/2024/02/13/CentOS-Connect-report/">
 	<title>Alexander Bokovoy: CentOS Connect 2024 report</title>
 	<link>https://vda.li/en/posts/2024/02/13/CentOS-Connect-report/</link>
@@ -227,12 +233,6 @@ solve the ‘between the worlds’ problems. That is something that many academi
 institutions have noticed already and many talks I had in the hallways were
 related to it.&lt;/p&gt;</content:encoded>
 	<dc:date>2024-02-13T07:25:00+00:00</dc:date>
-</item>
-<item rdf:about="http://rcritten.wordpress.com/?p=451">
-	<title>Rob Crittenden: Debug output from NSS PKCS#11 wrapper</title>
-	<link></link>
-	<content:encoded>To see which PKCS#11 functions NSS is calling when addressing data through a PKCS#11 module you first need a debug build of NSS. Set BUILD_OPT=1 in nss.spec and build in copr. $ git diffdiff &amp;#8211;git a/nss.spec b/nss.specindex cf6a0f7..19d6136 100644&amp;#8212; a/nss.spec+++ b/nss.spec@@ -362,7 +362,7 @@ export IN_TREE_FREEBL_HEADERS_FIRST=1export NSS_FORCE_FIPS=1 # Enable compiler optimizations and disable debugging code-export &amp;#8230; &lt;a href=&quot;https://rcritten.wordpress.com/2024/01/29/debug-output-from-nss-pkcs11-wrapper/&quot; class=&quot;more-link&quot;&gt;Continue reading &lt;span class=&quot;screen-reader-text&quot;&gt;Debug output from NSS PKCS#11 wrapper&lt;/span&gt; &lt;span class=&quot;meta-nav&quot;&gt;&amp;#8594;&lt;/span&gt;&lt;/a&gt;</content:encoded>
-	<dc:date>2024-01-29T21:15:22+00:00</dc:date>
 </item>
 <item rdf:about="http://floblanc.wordpress.com/?p=1730">
 	<title>Florence Blanc-Renaud: Interoperability of RHEL 7/8/9 IdM server and RHEL 7/8/9 IdM client</title>
