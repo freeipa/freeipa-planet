@@ -23,43 +23,7 @@
 <h1><a href="http://www.freeipa.org/"><img src="images/logo.png" width="220" height="68" alt=""></a>FreeIPA Identity Management planet - technical blogs</h1>
 
 <div class="daygroup">
-<h2>February 15, 2024</h2>
-
-<div class="channelgroup">
-
-
-
-
-
-
-
-<h3><a href="https://rcritten.wordpress.com" title="Frustrations">Rob Crittenden</a></h3>
-
-
-<div class="entrygroup" id="http://rcritten.wordpress.com/?p=460" lang="en">
-<h4><a href="">Understanding 389-ds access logging</a></h4>
-<div class="entry">
-<div class="content">
-The 389-ds access logs write multiple lines per connection. The contents of the logging will vary in particular based on the bind type (simple, over TLS, GSSAPI, etc). Each line will typically consist of the date, a connection id, the operation and the result. Because there may be simultaneous connections their operations are likely to &#8230; <a href="https://rcritten.wordpress.com/2024/02/15/understanding-389-ds-access-logging/" class="more-link">Continue reading <span class="screen-reader-text">Understanding 389-ds access logging</span> <span class="meta-nav">&#8594;</span></a></div>
-
-
-
-
-
-
-
-<p class="date">
-<a href="">by rcritten at February 15, 2024 06:38 PM</a>
-</p>
-</div>
-</div>
-
-
-</div>
-
-</div>
-<div class="daygroup">
-<h2>February 13, 2024</h2>
+<h2>May 31, 2024</h2>
 
 <div class="channelgroup">
 
@@ -72,163 +36,234 @@ The 389-ds access logs write multiple lines per connection. The contents of the 
 <h3><a href="https://vda.li/en/" title="Far away to be identical">Alexander Bokovoy</a></h3>
 
 
-<div class="entrygroup" id="https://vda.li/en/posts/2024/02/13/CentOS-Connect-report/">
-<h4><a href="https://vda.li/en/posts/2024/02/13/CentOS-Connect-report/">CentOS Connect 2024 report</a></h4>
+<div class="entrygroup" id="https://vda.li/posts/2024/05/31/ipa-ipa-trust-progress/">
+<h4><a href="https://vda.li/posts/2024/05/31/ipa-ipa-trust-progress/">IPA-IPA trust progress report</a></h4>
 <div class="entry">
 <div class="content">
-<p>February 1st-4th I participated in two events in Brussels: CentOS Connect and
-FOSDEM. FOSDEM is getting closer to its quarter a century anniversary next
-year. With 67 mini-conferences and another 30 events around it, it is
-considered one of the largest conferences in Europe, any topic included. This
-report is about CentOS Connect.</p>
+<p>FreeIPA and SSSD teams are working to enable IPA deployments to trust each other. This report outlines the progress we have so far.</p>
 
-<h2 id="centos-connect">CentOS Connect</h2>
+<h3 id="trust-across-enterprise-domains">Trust across enterprise domains</h3>
 
-<p><a href="https://connect.centos.org">CentOS Connect</a> was a two-day event preceding
-FOSDEM. Organized by the CentOS project, it brought together contributors from
-multiple projects around CentOS Stream upstreams (such as Fedora Project) and
-downstreams (from Red Hat Enterprise Linux, AlmaLinux, Rocky Linux, and
-others), long-time users and community members. A lot of talks were given on
-both days and several special interest groups (SIGs) ran their workshops on the
-first day.</p>
+<p>FreeIPA implements an enterprise domain management: systems enrolled into
+domain managed centrally and access resources available through the domain
+controllers. These resources include information about users and groups,
+machines, Kerberos services and different rules that can bind them. FreeIPA
+supports a trust to Active Directory forest by posing as a separate Active
+Directory forest with a single Active Directory domain (a forest root).</p>
 
-<h2 id="centos-integration-sig">CentOS Integration SIG</h2>
+<p>The approach helps to integrate with a majority of enterprise deployments. New
+deployments might not include Active Directory, though. Instead, they tend to
+be self-sufficient or integrate with externally managed data sources, often
+without retaining compatibility with traditional POSIX or Active Directory
+deployments. For example, cloud deployments might rely on OAuth2 identity
+providers or federate to social services.</p>
 
-<p>I have attended a workshop organized by the CentOS Integration SIG. The focus
-of this group is to define and run integration tests around CentOS Stream
-delivery to the public. While CentOS Stream composes are built using the
-messages on how RHEL next minor version is composed after being thoroughly
-tested by Red Hat’s quality engineering group, there is a value in testing
-CentOS Stream composes by other community members independently as their use
-cases might differ. Right now the set of tests is defined as a <code>t_functional</code>
-suite maintained by the CentOS Core SIG but this suite is not enough for the
-complex scenarios.</p>
+<p>FreeIPA can also integrate with OAuth2-based identity providers by bridging
+authentication over to them. Users would be native IPA users; IPA policies and
+rules to access IPA resources would apply to them but authentication and
+permission to issue a Kerberos ticket to the users would be delegated to an
+external IdP.</p>
 
-<p>The Integration SIG is looking at improving the situation. Two projects were
-present and interested in this work: RDO (RPM-based distribution of OpenStack)
-and RHEL Identity Management. Both teams have to deal with coordinated package
-deliveries across multiple components and both need to get multi-host
-deployments tested. RDO can be treated as a product built on top of CentOS
-Stream where its own RDO deliveries are installed on top of CentOS Stream
-images. RHEL Identity Management (IdM), on the other hand, is a part of RHEL.
-It is famously known as a ‘canary in the RHEL mine’ (thanks to Stephen
-Gallagher’s being poetic a decade ago): if anything is broken in RHEL, chances
-are it will be visible in RHEL IdM testing. With RHEL IdM integration scope
-expanding to provide passwordless desktop login support, this becomes even more
-important and also requires multi-host testing.</p>
+<p>One useful approach is to have a single IPA environment that holds all users
+and groups while individual machines all placed in separate IPA deployments.
+These deployments would need to trust the environment where users defined. In
+this document we’d call such deployment an IPA-IPA trust.</p>
 
-<p>CentOS Integration SIG’s proposal to address these requirements is interesting.
-Since CentOS Stream compose event is independent of the tests, a proposal by
-Aleksandra Fedorova and Adam Samalik is to treat the compose event in a way
-similar to a normal development workflow. Producing CentOS Stream compose would
-generate a merge request of a metadata associated with it to a particular git
-repository. This merge request then can be reacted to by the various bots and
-individuals. Since CentOS Stream compose is public, it is already accessible to
-third-party developers to run their tests and report back the results. This way
-qualification of the compose promotion to CentOS Stream mirrors can be affected
-by all parties and will help to keep already published composes in a
-non-conflicting state.</p>
+<p>IPA-IPA trust would look similar to the existing trust to Active Directory. A
+core technology is Kerberos: each deployment is a separate Kerberos realm; a
+trust on Kerberos level means cross-realm ticket granting tickets (TGT) issued
+by the realms’ KDCs. These cross-realm TGTs allow clients from one realm to
+request tickets for services located in the other realm.</p>
 
-<p>Since most of the projects involved already have their own continuous
-integration systems, adding another trigger for those would be trivial. For
-RHEL IdM and its upstream components (FreeIPA, SSSD, 389-ds, Dogtag PKI, etc.)
-it would also be possible finally to react to changes to CentOS Stream well
-ahead of time too. In the past this was complicated by a relative turbulence in
-the CentOS Stream composes early in RHEL next minor release development time
-when everybody updates their code and stabilization needs a lot of
-coordination. I am looking forward to Aleksandra’s proposal to land in the
-Integration SIG’s materials soon.</p>
+<p>Requesting Kerberos tickets is a base feature needed to authenticate across the
+trust. For proper relationship, identities of the authenticated objects
+(Kerberos principals and services) also need to be resolved. In POSIX
+environments these identities have to be associated with POSIX users to be able
+to store data on disk or to run processes with individual login sessions. The
+process requires not only authentication but also the ability to query
+information from a trusted domain’s domain controller.</p>
 
-<p><strong>Update</strong>: Aleksandra has published her proposal at the <a href="https://discussion.fedoraproject.org/t/centos-connect-follow-up-proposal-for-the-git-interface-to-the-compose-gate/104981">Fedora Discussion board</a></p>
+<p>In FreeIPA deployments, user and group information from the domain controllers
+is retireved by SSSD. When trust to Active Directory forest created, SSSD on
+IPA domain controllers is able to use a special entry in the trusted domain
+(trusted domain object, TDO) to authenticate against trusted domain’s domain
+controllers. SSSD knows how LDAP schema and directory information tree (DIT) on
+the Active Directory side are organized and can handle user and group object
+mapping for us.</p>
 
-<h2 id="centos-stream-and-epel">CentOS Stream and EPEL</h2>
+<p>If SSSD is able to resolve users and groups in the same way as with Active
+Directory trusts, this means we can reuse existing support for trusted Active
+Directory users and groups in IPA commands and keep the same user experience
+when adding HBAC or SUDO rules, managing IPA deployment, and so on. This would
+also mean we already would have a comprehensive test suite to validate IPA-IPA
+trust functionality.</p>
 
-<p>Two talks, by Troy Dawson and Carl George, described the current state of EPEL
-repository and its future interactions with CentOS 10 Stream. Troy’s discussion
-was fun, as usual: a lot of statistics obtained from the DNF repository
-trackers shows that old habits are hard to get rid off and moving forward is a
-struggle to many users despite security and supportability challenges with
-older software. Both CentOS 7 and CentOS 8 Stream end of life dates are coming
-in 2024, adding enough pressure themselves to that.</p>
+<h3 id="kerberos-trust-infrastructure">Kerberos trust infrastructure</h3>
 
-<p>There are interesting statistics from the EPEL evolution. In August 2023 at
-Flock to Fedora conference Troy and Carl pointed out that 727 packagers
-maintained 7298 packages in EPEL 7, 489 packagers handled 4968 packages in EPEL
-8, and 396 packagers were handling 5985 packages in EPEL 9. Half a year later
-we have 7874 packages in EPEL 7, 5108 packages in EPEL 8, and 6868 packages in
-EPEL 9. Pace seems to pick up EPEL 9 with upcoming end of life dates for older
-versions. Since soon only EPEL 9 and EPEL 10 would be actively built, there are
-probably more packagers that would be active in them as well.</p>
+<p>We first focused on making Kerberos infrastructure work when both realms
+represented by separate FreeIPA deployments. For past decade Microsoft, Samba
+Team, FreeIPA team, MIT Kerberos and Heimdal projects worked together to ensure
+there is a solid secure foundation for interoperability between non-POSIX
+(Active Directory) and POSIX deployments. In Active Directory world some
+crucial POSIX information is not available. When this information required on
+POSIX side, it is either synthesized or mapped onto existing objects by FreeIPA
+and Samba AD.</p>
 
-<p><img src="https://vda.li/en/img/resized/2024-centos-connect/epel-packages-800-2bb1c63e5.jpg" /></p>
+<p>Kerberos protocol originally didn’t include any means to securely tie Kerberos
+principals to identities. For example, one was able to create a Windows machine
+named <code>root</code> in Active Directory and then use its machine account to login to a
+different machine as <code>root</code> POSIX user. This attack approach not possible
+anymore if all sides (Kerberos KDCs of the involved realms and a target
+machine) use authorization data in Kerberos tickets to exchange identity
+details of the original Kerberos principal’s operating system object. In this
+case it would mean that a Kerberos principal <code>root</code> would have its machine
+account information associated with the Kerberos ticket and the target machine
+would be able to inquire and see that the real Kerberos principal would be
+<code>host/root.some.domain</code> and that this principal’s operating system object type
+is a machine account.</p>
 
-<p>EPEL 10 is coming soon. It will bring a slight difference in package suffixes
-and overall reduction of complexity to packagers. It is great to see how close
-EPEL work tracks to ELN activities in Fedora. One thing worth noting is that
-every Fedora package maintainer is a potential EPEL maintainer as well because
-EPEL reuses Fedora infrastructure for package maintenance. Even if someone is
-not maintaining EPEL branches on their Fedora packages (I am not doing that
-myself – my packages are mostly in RHEL), it allows easy jump-in and
-collaboration. After all, if packages aren’t in RHEL but are in Fedora, their
-EPEL presence is just one git branch (and Fedora infrastructure ticket) away.</p>
+<p>The extensions also give ability to communicate group membership details and
+more information about the account. FreeIPA domain controllers already use
+these details to check and map properties of trusted Active Directory domains’
+objects. For  native IPA objects we also generate this information. IPA-IPA
+trust can rely on these details as well.</p>
 
-<h2 id="20-years-of-centos-project">20 years of CentOS project</h2>
+<p>This observation allowed us to start with an experiment. Create a trusted
+domain object that represents a trusted IPA domain and see what does not work
+and needs a fix to make IPA-IPA trust a reality. We originally thought to
+replicate Active Directory infrastructure on IPA domain controller side so that
+existing <code>ipa trust-add --type=ad ..</code> command can be used to establish trust.</p>
 
-<p>First day of the CentOS Connect event ended with a party to celebrate 20 years
-of the CentOS Project. First release (“CentOS version 2”) went out on May 14th,
-2004 but since CentOS Connect is the closest big event organized by the project
-this year, getting a lot of contributors together to celebrate this anniversary
-seemed appropriate. A huge cake was presented, so big that it wasn’t possible
-to consume it completely during the party. It was delicious (like a lot of
-Belgian chocolate!) and next day coffee breaks allowed me to enjoy it a lot.</p>
+<p>These changes are part of the tree I maintain at
+<a href="https://github.com/abbra/freeipa/tree/wip-ipa-ipa-trust">my github WIP tree</a>.</p>
 
-<p><img src="https://vda.li/en/img/resized/2024-centos-connect/centos-20y-cake-800-92c46ff66.jpg" /></p>
+<h3 id="identity-information-retrieval">Identity information retrieval</h3>
 
-<h2 id="freeipa-and-centos-project-infrastructure">FreeIPA and CentOS project infrastructure</h2>
+<p>A part of Active Directory infrastructure that we implemented first was Global
+Catalog. Global Catalog is a separate, read-only, LDAP instance that contains a
+subset of the information about all Active Directory objects in the forest.
+Since FreeIPA LDAP tree uses different LDAP schema and structure than Active
+Directory LDAP tree, SSSD’s Active Directory identity provider cannot use
+normal FreeIPA LDAP tree as “yet another Active Directory domain’s LDAP tree”.
+We imagined that adding support for the Global Catalog (which SSSD is able to
+query) would make it possible to query IPA users and groups as “Active
+Directory” users and groups.</p>
 
-<p><a href="https://talks.vda.li/talks/2024/CentOS-Connect-Discuss-Your-FreeIPA.pdf">My own talk</a> was originally planned to gather feedback from all projects which
-build on top of CentOS as they use a very similar infrastructure. CentOS
-Project infrastructure is shared with Fedora Project which is built around
-FreeIPA as a backend and Noggin as a user management frontend. I asked in
-advance for some feedback from Fedora, CentOS, AlmaLinux, and RockyLinux
-infrastructure teams and haven’t gotten that much which prompted my own
-investigation. It is not an easy job since most organizations aren’t really
-interested in telling the world details of their core infrastructure. Hope was
-that I’d be able to see real world usage and maybe take some lessons from it
-back to the development teams.</p>
+<p>We soon found out two issues with this approach. It is not possible to force
+SSSD to use Global Catalog exclusively. SSSD uses the primary LDAP tree for
+retrieving users’ information and only switches to Global Catalog for
+retrieving groups information. Adding support for Global Catalog would not
+help: existing Active Directory domain identity provider in SSSD would not be
+able to work against a trusted IPA domain anyway. A proper support for trusted
+IPA domain in SSSD is needed.</p>
 
-<p>While working on my talk, we also experienced an outage in Fedora
-infrastructure related to the upgrade of the FreeIPA setup used there. My team
-has been helping Fedora infrastructure administrators so I finally got the
-feedback I was looking for. That led to several fixes upstream and they have
-recently been backported to RHEL and CentOS Stream as well. However, the
-overall lack of feedback is concerning – or at least I thought so.</p>
+<p>Here we stumbled upon our next issue. SSSD implementation for IPA domain
+provider includes ability to handle all trusts to Active Directory domains that
+IPA deployment has. Trusted domains (subdomains, in SSSD speak), in theory, can
+come from any trust type. Since IPA has only a trust to Active Directory, SSSD
+implementation did not have an infrastructure to handle different types of
+subdomains. Instead, a single subdomain type is assumed: any subdomain
+discovered is an Active Directory domain. Even if we present IPA-IPA trust as
+an Active Directory trust, SSSD would still attempt to use Active
+Directory-specific LDAP schema and directory information tree arrangement when
+making LDAP queries. IPA users and groups from trusted domains aren’t found
+because LDAP server would not match that LDAP query to the IPA LDAP tree and
+schema.</p>
 
-<p>During CentOS Connect I had the opportunity to discuss this with both AlmaLinux
-(Jonathan) and RockyLinux (Luis) projects’ sysadmins. “It just works” is a common
-response I get. Well, that’s nice to hear but what was more exciting to hear is
-that these projects went a bit further than we did in Fedora and CentOS Stream
-with their environments. Luis <a href="https://talks.vda.li/talks/2024/CentOS-Connect-Discuss-Your-FreeIPA.pdf">has published the whole RockyLinux infrastructure</a>
-code responsible for FreeIPA deployment. It is based heavily on
-ansible-freeipa, reuses the same components we developed for Fedora
-Infrastructure. Rocky also runs FreeIPA tests in OpenQA instance, similarly to
-Fedora, and hopefully Luis would contribute more tests to cover passwordless
-login, already available in CentOS Stream. This would be a very welcome
-contribution in the light of the Integration SIG activities, helping us to test
-more complex scenarios community-wide. AlmaLinux infrastructure also uses
-ansible-freeipa but the code is not publicly available, for whatever reason.
-Jonathan promised to rectify this problem.</p>
+<p>SSSD needed a complete refactoring of the subdomains’ infrastructure to allow
+more than one subdomain type to be present. This work is still in progress.
+Justin Stephenson from the SSSD team tracks his progress in
+<a href="https://github.com/justin-stephenson/sssd/pull/69">this WIP pull request</a>.</p>
 
-<h2 id="hallway-tracks">Hallway tracks</h2>
+<h3 id="demo">Demo</h3>
 
-<p>I had a number of discussions with people from all kinds of CentOS communities.
-FreeIPA sits at a unique position by providing secure infrastructure to run
-POSIX workloads and linking it with modern requirements to web authentication.
-Our effort to improve passwordless login to Linux environments with reuse of
-Kerberos to propagate authorization state across multiple machines helps to
-solve the ‘between the worlds’ problems. That is something that many academic
-institutions have noticed already and many talks I had in the hallways were
-related to it.</p></div>
+<p>With the refactoring work currently being done by Justin, it is possible to
+combine two parts: Global Catalog-based FreeIPA changes from
+<a href="https://github.com/abbra/freeipa/tree/wip-ipa-ipa-trust">my WIP source tree</a>
+and SSSD changes from
+<a href="https://github.com/justin-stephenson/sssd/pull/69">Justin’s WIP source tree</a>.</p>
+
+<p>We have these modifications to FreeIPA and SSSD prebuilt in Fedora COPR
+repository <code>abbra/wip-ipa-trust</code>. The packages there work in a specific
+environment where two FreeIPA deployments named <code>ipa1.test</code> and <code>ipa2.test</code>
+because we have so far no way to differentiate trusted IPA deployment from a
+trusted Active Directory deployment, thus SSSD hardcodes the names of the IPA
+domains to trust.</p>
+
+<p>A trust between <code>ipa1.test</code> and <code>ipa2.test</code> can be established using standard
+<code>ipa trust-add</code> command. This approach allowed us to investigate what is
+working or not after the trust link is created. Both FreeIPA and SSSD teams can
+also work on validating that specific IPA functionality available to handle
+trusted Active Directory users and groups is also working with IPA-IPA trust.</p>
+
+<p>I recorded a small demo on Fedora 40:</p>
+<div class="embed-container">
+ 
+</div>
+
+<p>Two administrators establish trust between their environments and then allow
+use of resources across the trust. Since the exact details how trust is
+established will change, I omitted that step and show pre-created trust entries
+along with the ID range details. Only ‘Active Directory trust with POSIX
+attributes’ ID range type supported for now. It should not be a problem though
+because IPA deployments do provide POSIX information.</p>
+
+<p>To allow access to IPA API, an administrator of the trusting domain needs to
+create ID overrides for user from the trusted domain. Once the overrides are in
+place, a user from the trusted domain can issue IPA API calls. In the demo we
+do <code>ipa ping</code> call and show that underlying Kerberos service tickets were
+requested and issued.</p>
+
+<h3 id="future-work">Future work</h3>
+
+<p>Now that we validated the approach, the road splits into two:</p>
+<ul>
+  <li>figure out how to get trust established</li>
+  <li>fix remaining bugs to make ‘day two’ operations possible.</li>
+</ul>
+
+<p>Establishing trust is an interesting problem. Or two. For pure IPA-IPA trust we
+don’t need to provision the same infrastructure as with Active Directory trust:
+we don’t need to run Samba on each domain controller to be able to create
+trusted domain objects and respond to DCE RPC requests because we don’t use DCE
+RPC in SSSD.</p>
+
+<p>On top of that, FreeIPA has extensive set of passwordless authentication
+methods which require use of a FAST channel when obtaining an initial Kerberos
+TGT. When trust to Active Directory created, we first authenticate to AD DC to
+get a Kerberos TGT of the Active Directory’s administrator. Windows does not
+have support for passwordless authentication methods through Kerberos except
+for PKINIT (smartcards), so in most cases we deal with password authentication.
+If an IPA administrative account is using passwordless method to authenticate,
+we first have to create a FAST channel or a trusted-to-be domain controller
+will not even expose supported pre-authentication methods. Any existing
+Kerberos ticket could be used to create the FAST channel but it must be from
+the trusted domain and we don’t have trust yet. In our own domain we can use a
+machine account (on a particular machine) or an Anonymous PKINIT to create the
+FAST channel. For a trusted-to-be domain we have to trust the CA who issued
+PKINIT certificates to their KDC. And KDCs might be accessible through a HTTPS
+proxy (MS-KKDCP protocol). This means some kind of pre-trust exchange needed to
+make sure we can authenticate against their KDCs successfully.</p>
+
+<p>Also, we have no idea what exact pre-authentication methods will be available
+to the user. Practically, we only care about being able to authenticate to the
+trusted domain’s IPA API and then use that connection to set things up. For
+this it would be enough to authenticate to the trusted-to-be domain’s IPA API
+endpoint, save received cookies and use them. This method wouldn’t support
+passwordless authentication either, except an OTP method. FIDO2 and external
+IdP (OAuth2) authentication aren’t yet directly supported in IPA web UI and IPA
+API end-points.</p>
+
+<p>With all those complications, we look at enabling OAuth2-based authentication
+and authorization endpoints in IPA first. We then can use them to request a
+token from a trusted-to-be domain’s OAuth2 endpoint and use it to establish the
+trust. A remote domain controller will handle the authentication of their users
+and will be able to supply all required details: trusted CA chains, ID ranges,
+scopes for authentication/ID mapping, etc.</p>
+
+<p>And the OAuth2 endpoint will allow us to handle own passwordless authentication
+methods for IPA Web UI and applications on the enrolled systems like Cockpit
+which will be able to delegate to IPA for the user login.</p></div>
 
 
 
@@ -237,7 +272,7 @@ related to it.</p></div>
 
 
 <p class="date">
-<a href="https://vda.li/en/posts/2024/02/13/CentOS-Connect-report/">February 13, 2024 07:25 AM</a>
+<a href="https://vda.li/posts/2024/05/31/ipa-ipa-trust-progress/">May 31, 2024 09:30 AM</a>
 </p>
 </div>
 </div>
@@ -309,7 +344,7 @@ Pavel Reichl	</a>
 <li>
 <a href="http://rhelblog.redhat.com/tag/identity-management,idm/feed/" title="subscribe"><img src="images/feed-icon-10x10.png" alt="(feed)"></a>
 
-	<a href="https://www.redhat.com/en/blog/channel/red-hat-enterprise-linux" title="">
+	<a href="https://www.redhat.com/es/blog/channel/red-hat-enterprise-linux" title="">
 Red Hat Blog	</a>
 </li>
 <li>
@@ -340,7 +375,7 @@ Striker Leggette	</a>
 
 <h2>Last updated</h2>
 <p>
-May 31, 2024 05:17 AM<br>
+June 01, 2024 05:16 AM<br>
 <em>All times are UTC.</em><br>
 </p>
 

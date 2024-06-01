@@ -5,8 +5,250 @@
 	<link rel="self" href="http://planet.freeipa.org/atom.xml"/>
 	<link href="http://planet.freeipa.org/"/>
 	<id>http://planet.freeipa.org/atom.xml</id>
-	<updated>2024-05-31T05:17:59+00:00</updated>
+	<updated>2024-06-01T05:16:21+00:00</updated>
 	<generator uri="http://www.planetplanet.org/">Planet/2.0 +http://www.planetplanet.org</generator>
+
+	<entry>
+		<title type="html">IPA-IPA trust progress report</title>
+		<link href="https://vda.li/posts/2024/05/31/ipa-ipa-trust-progress/"/>
+		<id>https://vda.li/posts/2024/05/31/ipa-ipa-trust-progress/</id>
+		<updated>2024-05-31T09:30:00+00:00</updated>
+		<content type="html">&lt;p&gt;FreeIPA and SSSD teams are working to enable IPA deployments to trust each other. This report outlines the progress we have so far.&lt;/p&gt;
+
+&lt;h3 id=&quot;trust-across-enterprise-domains&quot;&gt;Trust across enterprise domains&lt;/h3&gt;
+
+&lt;p&gt;FreeIPA implements an enterprise domain management: systems enrolled into
+domain managed centrally and access resources available through the domain
+controllers. These resources include information about users and groups,
+machines, Kerberos services and different rules that can bind them. FreeIPA
+supports a trust to Active Directory forest by posing as a separate Active
+Directory forest with a single Active Directory domain (a forest root).&lt;/p&gt;
+
+&lt;p&gt;The approach helps to integrate with a majority of enterprise deployments. New
+deployments might not include Active Directory, though. Instead, they tend to
+be self-sufficient or integrate with externally managed data sources, often
+without retaining compatibility with traditional POSIX or Active Directory
+deployments. For example, cloud deployments might rely on OAuth2 identity
+providers or federate to social services.&lt;/p&gt;
+
+&lt;p&gt;FreeIPA can also integrate with OAuth2-based identity providers by bridging
+authentication over to them. Users would be native IPA users; IPA policies and
+rules to access IPA resources would apply to them but authentication and
+permission to issue a Kerberos ticket to the users would be delegated to an
+external IdP.&lt;/p&gt;
+
+&lt;p&gt;One useful approach is to have a single IPA environment that holds all users
+and groups while individual machines all placed in separate IPA deployments.
+These deployments would need to trust the environment where users defined. In
+this document we’d call such deployment an IPA-IPA trust.&lt;/p&gt;
+
+&lt;p&gt;IPA-IPA trust would look similar to the existing trust to Active Directory. A
+core technology is Kerberos: each deployment is a separate Kerberos realm; a
+trust on Kerberos level means cross-realm ticket granting tickets (TGT) issued
+by the realms’ KDCs. These cross-realm TGTs allow clients from one realm to
+request tickets for services located in the other realm.&lt;/p&gt;
+
+&lt;p&gt;Requesting Kerberos tickets is a base feature needed to authenticate across the
+trust. For proper relationship, identities of the authenticated objects
+(Kerberos principals and services) also need to be resolved. In POSIX
+environments these identities have to be associated with POSIX users to be able
+to store data on disk or to run processes with individual login sessions. The
+process requires not only authentication but also the ability to query
+information from a trusted domain’s domain controller.&lt;/p&gt;
+
+&lt;p&gt;In FreeIPA deployments, user and group information from the domain controllers
+is retireved by SSSD. When trust to Active Directory forest created, SSSD on
+IPA domain controllers is able to use a special entry in the trusted domain
+(trusted domain object, TDO) to authenticate against trusted domain’s domain
+controllers. SSSD knows how LDAP schema and directory information tree (DIT) on
+the Active Directory side are organized and can handle user and group object
+mapping for us.&lt;/p&gt;
+
+&lt;p&gt;If SSSD is able to resolve users and groups in the same way as with Active
+Directory trusts, this means we can reuse existing support for trusted Active
+Directory users and groups in IPA commands and keep the same user experience
+when adding HBAC or SUDO rules, managing IPA deployment, and so on. This would
+also mean we already would have a comprehensive test suite to validate IPA-IPA
+trust functionality.&lt;/p&gt;
+
+&lt;h3 id=&quot;kerberos-trust-infrastructure&quot;&gt;Kerberos trust infrastructure&lt;/h3&gt;
+
+&lt;p&gt;We first focused on making Kerberos infrastructure work when both realms
+represented by separate FreeIPA deployments. For past decade Microsoft, Samba
+Team, FreeIPA team, MIT Kerberos and Heimdal projects worked together to ensure
+there is a solid secure foundation for interoperability between non-POSIX
+(Active Directory) and POSIX deployments. In Active Directory world some
+crucial POSIX information is not available. When this information required on
+POSIX side, it is either synthesized or mapped onto existing objects by FreeIPA
+and Samba AD.&lt;/p&gt;
+
+&lt;p&gt;Kerberos protocol originally didn’t include any means to securely tie Kerberos
+principals to identities. For example, one was able to create a Windows machine
+named &lt;code&gt;root&lt;/code&gt; in Active Directory and then use its machine account to login to a
+different machine as &lt;code&gt;root&lt;/code&gt; POSIX user. This attack approach not possible
+anymore if all sides (Kerberos KDCs of the involved realms and a target
+machine) use authorization data in Kerberos tickets to exchange identity
+details of the original Kerberos principal’s operating system object. In this
+case it would mean that a Kerberos principal &lt;code&gt;root&lt;/code&gt; would have its machine
+account information associated with the Kerberos ticket and the target machine
+would be able to inquire and see that the real Kerberos principal would be
+&lt;code&gt;host/root.some.domain&lt;/code&gt; and that this principal’s operating system object type
+is a machine account.&lt;/p&gt;
+
+&lt;p&gt;The extensions also give ability to communicate group membership details and
+more information about the account. FreeIPA domain controllers already use
+these details to check and map properties of trusted Active Directory domains’
+objects. For  native IPA objects we also generate this information. IPA-IPA
+trust can rely on these details as well.&lt;/p&gt;
+
+&lt;p&gt;This observation allowed us to start with an experiment. Create a trusted
+domain object that represents a trusted IPA domain and see what does not work
+and needs a fix to make IPA-IPA trust a reality. We originally thought to
+replicate Active Directory infrastructure on IPA domain controller side so that
+existing &lt;code&gt;ipa trust-add --type=ad ..&lt;/code&gt; command can be used to establish trust.&lt;/p&gt;
+
+&lt;p&gt;These changes are part of the tree I maintain at
+&lt;a href=&quot;https://github.com/abbra/freeipa/tree/wip-ipa-ipa-trust&quot;&gt;my github WIP tree&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;identity-information-retrieval&quot;&gt;Identity information retrieval&lt;/h3&gt;
+
+&lt;p&gt;A part of Active Directory infrastructure that we implemented first was Global
+Catalog. Global Catalog is a separate, read-only, LDAP instance that contains a
+subset of the information about all Active Directory objects in the forest.
+Since FreeIPA LDAP tree uses different LDAP schema and structure than Active
+Directory LDAP tree, SSSD’s Active Directory identity provider cannot use
+normal FreeIPA LDAP tree as “yet another Active Directory domain’s LDAP tree”.
+We imagined that adding support for the Global Catalog (which SSSD is able to
+query) would make it possible to query IPA users and groups as “Active
+Directory” users and groups.&lt;/p&gt;
+
+&lt;p&gt;We soon found out two issues with this approach. It is not possible to force
+SSSD to use Global Catalog exclusively. SSSD uses the primary LDAP tree for
+retrieving users’ information and only switches to Global Catalog for
+retrieving groups information. Adding support for Global Catalog would not
+help: existing Active Directory domain identity provider in SSSD would not be
+able to work against a trusted IPA domain anyway. A proper support for trusted
+IPA domain in SSSD is needed.&lt;/p&gt;
+
+&lt;p&gt;Here we stumbled upon our next issue. SSSD implementation for IPA domain
+provider includes ability to handle all trusts to Active Directory domains that
+IPA deployment has. Trusted domains (subdomains, in SSSD speak), in theory, can
+come from any trust type. Since IPA has only a trust to Active Directory, SSSD
+implementation did not have an infrastructure to handle different types of
+subdomains. Instead, a single subdomain type is assumed: any subdomain
+discovered is an Active Directory domain. Even if we present IPA-IPA trust as
+an Active Directory trust, SSSD would still attempt to use Active
+Directory-specific LDAP schema and directory information tree arrangement when
+making LDAP queries. IPA users and groups from trusted domains aren’t found
+because LDAP server would not match that LDAP query to the IPA LDAP tree and
+schema.&lt;/p&gt;
+
+&lt;p&gt;SSSD needed a complete refactoring of the subdomains’ infrastructure to allow
+more than one subdomain type to be present. This work is still in progress.
+Justin Stephenson from the SSSD team tracks his progress in
+&lt;a href=&quot;https://github.com/justin-stephenson/sssd/pull/69&quot;&gt;this WIP pull request&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;demo&quot;&gt;Demo&lt;/h3&gt;
+
+&lt;p&gt;With the refactoring work currently being done by Justin, it is possible to
+combine two parts: Global Catalog-based FreeIPA changes from
+&lt;a href=&quot;https://github.com/abbra/freeipa/tree/wip-ipa-ipa-trust&quot;&gt;my WIP source tree&lt;/a&gt;
+and SSSD changes from
+&lt;a href=&quot;https://github.com/justin-stephenson/sssd/pull/69&quot;&gt;Justin’s WIP source tree&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;We have these modifications to FreeIPA and SSSD prebuilt in Fedora COPR
+repository &lt;code&gt;abbra/wip-ipa-trust&lt;/code&gt;. The packages there work in a specific
+environment where two FreeIPA deployments named &lt;code&gt;ipa1.test&lt;/code&gt; and &lt;code&gt;ipa2.test&lt;/code&gt;
+because we have so far no way to differentiate trusted IPA deployment from a
+trusted Active Directory deployment, thus SSSD hardcodes the names of the IPA
+domains to trust.&lt;/p&gt;
+
+&lt;p&gt;A trust between &lt;code&gt;ipa1.test&lt;/code&gt; and &lt;code&gt;ipa2.test&lt;/code&gt; can be established using standard
+&lt;code&gt;ipa trust-add&lt;/code&gt; command. This approach allowed us to investigate what is
+working or not after the trust link is created. Both FreeIPA and SSSD teams can
+also work on validating that specific IPA functionality available to handle
+trusted Active Directory users and groups is also working with IPA-IPA trust.&lt;/p&gt;
+
+&lt;p&gt;I recorded a small demo on Fedora 40:&lt;/p&gt;
+&lt;div class=&quot;embed-container&quot;&gt;
+ 
+&lt;/div&gt;
+
+&lt;p&gt;Two administrators establish trust between their environments and then allow
+use of resources across the trust. Since the exact details how trust is
+established will change, I omitted that step and show pre-created trust entries
+along with the ID range details. Only ‘Active Directory trust with POSIX
+attributes’ ID range type supported for now. It should not be a problem though
+because IPA deployments do provide POSIX information.&lt;/p&gt;
+
+&lt;p&gt;To allow access to IPA API, an administrator of the trusting domain needs to
+create ID overrides for user from the trusted domain. Once the overrides are in
+place, a user from the trusted domain can issue IPA API calls. In the demo we
+do &lt;code&gt;ipa ping&lt;/code&gt; call and show that underlying Kerberos service tickets were
+requested and issued.&lt;/p&gt;
+
+&lt;h3 id=&quot;future-work&quot;&gt;Future work&lt;/h3&gt;
+
+&lt;p&gt;Now that we validated the approach, the road splits into two:&lt;/p&gt;
+&lt;ul&gt;
+  &lt;li&gt;figure out how to get trust established&lt;/li&gt;
+  &lt;li&gt;fix remaining bugs to make ‘day two’ operations possible.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Establishing trust is an interesting problem. Or two. For pure IPA-IPA trust we
+don’t need to provision the same infrastructure as with Active Directory trust:
+we don’t need to run Samba on each domain controller to be able to create
+trusted domain objects and respond to DCE RPC requests because we don’t use DCE
+RPC in SSSD.&lt;/p&gt;
+
+&lt;p&gt;On top of that, FreeIPA has extensive set of passwordless authentication
+methods which require use of a FAST channel when obtaining an initial Kerberos
+TGT. When trust to Active Directory created, we first authenticate to AD DC to
+get a Kerberos TGT of the Active Directory’s administrator. Windows does not
+have support for passwordless authentication methods through Kerberos except
+for PKINIT (smartcards), so in most cases we deal with password authentication.
+If an IPA administrative account is using passwordless method to authenticate,
+we first have to create a FAST channel or a trusted-to-be domain controller
+will not even expose supported pre-authentication methods. Any existing
+Kerberos ticket could be used to create the FAST channel but it must be from
+the trusted domain and we don’t have trust yet. In our own domain we can use a
+machine account (on a particular machine) or an Anonymous PKINIT to create the
+FAST channel. For a trusted-to-be domain we have to trust the CA who issued
+PKINIT certificates to their KDC. And KDCs might be accessible through a HTTPS
+proxy (MS-KKDCP protocol). This means some kind of pre-trust exchange needed to
+make sure we can authenticate against their KDCs successfully.&lt;/p&gt;
+
+&lt;p&gt;Also, we have no idea what exact pre-authentication methods will be available
+to the user. Practically, we only care about being able to authenticate to the
+trusted domain’s IPA API and then use that connection to set things up. For
+this it would be enough to authenticate to the trusted-to-be domain’s IPA API
+endpoint, save received cookies and use them. This method wouldn’t support
+passwordless authentication either, except an OTP method. FIDO2 and external
+IdP (OAuth2) authentication aren’t yet directly supported in IPA web UI and IPA
+API end-points.&lt;/p&gt;
+
+&lt;p&gt;With all those complications, we look at enabling OAuth2-based authentication
+and authorization endpoints in IPA first. We then can use them to request a
+token from a trusted-to-be domain’s OAuth2 endpoint and use it to establish the
+trust. A remote domain controller will handle the authentication of their users
+and will be able to supply all required details: trusted CA chains, ID ranges,
+scopes for authentication/ID mapping, etc.&lt;/p&gt;
+
+&lt;p&gt;And the OAuth2 endpoint will allow us to handle own passwordless authentication
+methods for IPA Web UI and applications on the enrolled systems like Cockpit
+which will be able to delegate to IPA for the user login.&lt;/p&gt;</content>
+		<author>
+			<name>Alexander Bokovoy</name>
+			<uri>https://vda.li/en/</uri>
+		</author>
+		<source>
+			<title type="html">Far away to be identical</title>
+			<subtitle type="html">Identity management chaos or a development of a fun</subtitle>
+			<link rel="self" href="https://vda.li/en/freeipa.xml"/>
+			<id>https://vda.li/en/freeipa.xml</id>
+			<updated>2024-06-01T05:16:12+00:00</updated>
+		</source>
+	</entry>
 
 	<entry xml:lang="en">
 		<title type="html">Understanding 389-ds access logging</title>
@@ -23,14 +265,14 @@
 			<subtitle type="html">Frustrated rantings of a developer</subtitle>
 			<link rel="self" href="https://rcritten.wordpress.com/feed/"/>
 			<id>https://rcritten.wordpress.com/feed/</id>
-			<updated>2024-05-31T05:17:57+00:00</updated>
+			<updated>2024-06-01T05:16:19+00:00</updated>
 		</source>
 	</entry>
 
 	<entry>
 		<title type="html">CentOS Connect 2024 report</title>
-		<link href="https://vda.li/en/posts/2024/02/13/CentOS-Connect-report/"/>
-		<id>https://vda.li/en/posts/2024/02/13/CentOS-Connect-report/</id>
+		<link href="https://vda.li/posts/2024/02/13/CentOS-Connect-report/"/>
+		<id>https://vda.li/posts/2024/02/13/CentOS-Connect-report/</id>
 		<updated>2024-02-13T07:25:00+00:00</updated>
 		<content type="html">&lt;p&gt;February 1st-4th I participated in two events in Brussels: CentOS Connect and
 FOSDEM. FOSDEM is getting closer to its quarter a century anniversary next
@@ -194,7 +436,7 @@ related to it.&lt;/p&gt;</content>
 			<subtitle type="html">Identity management chaos or a development of a fun</subtitle>
 			<link rel="self" href="https://vda.li/en/freeipa.xml"/>
 			<id>https://vda.li/en/freeipa.xml</id>
-			<updated>2024-05-31T05:17:50+00:00</updated>
+			<updated>2024-06-01T05:16:12+00:00</updated>
 		</source>
 	</entry>
 
@@ -213,14 +455,14 @@ related to it.&lt;/p&gt;</content>
 			<subtitle type="html">Sharing knowledge on Identity Management</subtitle>
 			<link rel="self" href="https://floblanc.wordpress.com/tag/freeipa/feed/"/>
 			<id>https://floblanc.wordpress.com/tag/freeipa/feed/</id>
-			<updated>2024-05-31T05:17:50+00:00</updated>
+			<updated>2024-06-01T05:16:12+00:00</updated>
 		</source>
 	</entry>
 
 	<entry>
 		<title type="html">Multi-homed FreeIPA server investigation</title>
-		<link href="https://vda.li/en/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/"/>
-		<id>https://vda.li/en/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/</id>
+		<link href="https://vda.li/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/"/>
+		<id>https://vda.li/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/</id>
 		<updated>2023-08-16T07:04:00+00:00</updated>
 		<content type="html">&lt;p&gt;Once in a while people come and ask for FreeIPA servers to work in multi-homed
 environments. A multi-homed environment in this context is a deployment where
@@ -431,14 +673,14 @@ against other, more urging tasks, is what we need to figure first…&lt;/p&gt;</
 			<subtitle type="html">Identity management chaos or a development of a fun</subtitle>
 			<link rel="self" href="https://vda.li/en/freeipa.xml"/>
 			<id>https://vda.li/en/freeipa.xml</id>
-			<updated>2024-05-31T05:17:50+00:00</updated>
+			<updated>2024-06-01T05:16:12+00:00</updated>
 		</source>
 	</entry>
 
 	<entry>
 		<title type="html">Flock to Fedora 2023 report</title>
-		<link href="https://vda.li/en/posts/2023/08/11/Flock-report/"/>
-		<id>https://vda.li/en/posts/2023/08/11/Flock-report/</id>
+		<link href="https://vda.li/posts/2023/08/11/Flock-report/"/>
+		<id>https://vda.li/posts/2023/08/11/Flock-report/</id>
 		<updated>2023-08-11T10:46:00+00:00</updated>
 		<content type="html">&lt;p&gt;On August 2nd-4th, 2023, Fedora Project ran its annual contributors conference, &lt;a href=&quot;https://flocktofedora.org&quot;&gt;Flock to Fedora&lt;/a&gt;, in Cork, Ireland. After a previous successful Flock in 2019 in Budapest, Fedora contributors did not meet in person due to rough pandemia years and had created Nest with Fedora online event instead. Nest ran for three years but online meetings aren’t a full replacement for face to face collaboration. Cork’s Flock was supposed to combine both online and offline events together.&lt;/p&gt;
 
@@ -557,7 +799,7 @@ against other, more urging tasks, is what we need to figure first…&lt;/p&gt;</
 			<subtitle type="html">Identity management chaos or a development of a fun</subtitle>
 			<link rel="self" href="https://vda.li/en/freeipa.xml"/>
 			<id>https://vda.li/en/freeipa.xml</id>
-			<updated>2024-05-31T05:17:50+00:00</updated>
+			<updated>2024-06-01T05:16:12+00:00</updated>
 		</source>
 	</entry>
 
@@ -705,7 +947,7 @@ be the only ones to offer access to these new algorithms.&lt;/p&gt;
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -1253,7 +1495,7 @@ versions of RHEL.&lt;/p&gt;</content>
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2024-05-31T05:17:51+00:00</updated>
+			<updated>2024-06-01T05:16:12+00:00</updated>
 		</source>
 	</entry>
 
@@ -1379,14 +1621,14 @@ schema&lt;/a&gt;.&lt;/p&gt;</content>
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2024-05-31T05:17:51+00:00</updated>
+			<updated>2024-06-01T05:16:12+00:00</updated>
 		</source>
 	</entry>
 
 	<entry>
 		<title type="html">FreeIPA authentication improvements and Fedora Infrastructure part 2</title>
-		<link href="https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra-2/"/>
-		<id>https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra-2/</id>
+		<link href="https://vda.li/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra-2/"/>
+		<id>https://vda.li/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra-2/</id>
 		<updated>2022-10-28T06:50:00+00:00</updated>
 		<content type="html">&lt;p&gt;This article continues the &lt;a href=&quot;https://vda.li/en/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra/&quot;&gt;discussion&lt;/a&gt;
 about FreeIPA authentication improvements and how they could benefit Fedora
@@ -1520,14 +1762,14 @@ like we were all before with Linux on the desktop.&lt;/p&gt;</content>
 			<subtitle type="html">Identity management chaos or a development of a fun</subtitle>
 			<link rel="self" href="https://vda.li/en/freeipa.xml"/>
 			<id>https://vda.li/en/freeipa.xml</id>
-			<updated>2024-05-31T05:17:50+00:00</updated>
+			<updated>2024-06-01T05:16:12+00:00</updated>
 		</source>
 	</entry>
 
 	<entry>
 		<title type="html">FreeIPA authentication improvements and Fedora Infrastructure part 1</title>
-		<link href="https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra/"/>
-		<id>https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra/</id>
+		<link href="https://vda.li/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra/"/>
+		<id>https://vda.li/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra/</id>
 		<updated>2022-10-28T05:50:00+00:00</updated>
 		<content type="html">&lt;p&gt;The Fedora project exists because of its contributors. Their contributions shape
 the landscape of Linux distributions in a direct way but they also have made a
@@ -1627,7 +1869,7 @@ Webauthn/FIDO2 use by Fedora contributors.&lt;/p&gt;</content>
 			<subtitle type="html">Identity management chaos or a development of a fun</subtitle>
 			<link rel="self" href="https://vda.li/en/freeipa.xml"/>
 			<id>https://vda.li/en/freeipa.xml</id>
-			<updated>2024-05-31T05:17:50+00:00</updated>
+			<updated>2024-06-01T05:16:12+00:00</updated>
 		</source>
 	</entry>
 
@@ -1826,7 +2068,7 @@ processing.&lt;/p&gt;</content>
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2024-05-31T05:17:51+00:00</updated>
+			<updated>2024-06-01T05:16:12+00:00</updated>
 		</source>
 	</entry>
 
@@ -1995,7 +2237,7 @@ openstack user list -f yaml  --domain freeipa
 			<subtitle type="html">The Notebook of a Programmer Climber Musician Ex-Soldier Woodworker and a few other things</subtitle>
 			<link rel="self" href="http://adam.younglogic.com/category/software/freeipa,kerberos,ldap/feed/"/>
 			<id>http://adam.younglogic.com/category/software/freeipa,kerberos,ldap/feed/</id>
-			<updated>2024-05-31T05:17:49+00:00</updated>
+			<updated>2024-06-01T05:16:11+00:00</updated>
 		</source>
 	</entry>
 
@@ -2366,7 +2608,7 @@ feature work will be determined later.&lt;/p&gt;</content>
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2024-05-31T05:17:51+00:00</updated>
+			<updated>2024-06-01T05:16:12+00:00</updated>
 		</source>
 	</entry>
 
@@ -2700,7 +2942,7 @@ future investigations.&lt;/p&gt;</content>
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2024-05-31T05:17:51+00:00</updated>
+			<updated>2024-06-01T05:16:12+00:00</updated>
 		</source>
 	</entry>
 
@@ -2719,7 +2961,7 @@ future investigations.&lt;/p&gt;</content>
 			<subtitle type="html">Recent content on Nathaniel McCallum</subtitle>
 			<link rel="self" href="https://npmccallum.gitlab.io/index.xml"/>
 			<id>https://npmccallum.gitlab.io/index.xml</id>
-			<updated>2024-05-31T05:17:53+00:00</updated>
+			<updated>2024-06-01T05:16:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -3016,7 +3258,7 @@ eventually.&lt;/p&gt;</content>
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2024-05-31T05:17:51+00:00</updated>
+			<updated>2024-06-01T05:16:12+00:00</updated>
 		</source>
 	</entry>
 
@@ -3174,7 +3416,7 @@ official OpenShift documentation.&lt;/p&gt;</content>
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2024-05-31T05:17:51+00:00</updated>
+			<updated>2024-06-01T05:16:12+00:00</updated>
 		</source>
 	</entry>
 
@@ -3600,7 +3842,7 @@ soon!&lt;/p&gt;</content>
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2024-05-31T05:17:51+00:00</updated>
+			<updated>2024-06-01T05:16:12+00:00</updated>
 		</source>
 	</entry>
 
@@ -3708,7 +3950,7 @@ concept for user-namespaced systemd workloads on OpenShift.&lt;/p&gt;</content>
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2024-05-31T05:17:51+00:00</updated>
+			<updated>2024-06-01T05:16:12+00:00</updated>
 		</source>
 	</entry>
 
@@ -3983,7 +4225,7 @@ modified &lt;code&gt;runc&lt;/code&gt; onto worker nodes, I will get on with tes
 			<title type="html">Fraser's IdM Blog</title>
 			<link rel="self" href="https://frasertweedale.github.io/blog-redhat/atom.xml"/>
 			<id>https://frasertweedale.github.io/blog-redhat/atom.xml</id>
-			<updated>2024-05-31T05:17:51+00:00</updated>
+			<updated>2024-06-01T05:16:12+00:00</updated>
 		</source>
 	</entry>
 
@@ -4053,14 +4295,14 @@ certutil  -d . -D -n &quot;Certificate Authority - HOME.YOUNGLOGIC.NET
 			<subtitle type="html">The Notebook of a Programmer Climber Musician Ex-Soldier Woodworker and a few other things</subtitle>
 			<link rel="self" href="http://adam.younglogic.com/category/software/freeipa,kerberos,ldap/feed/"/>
 			<id>http://adam.younglogic.com/category/software/freeipa,kerberos,ldap/feed/</id>
-			<updated>2024-05-31T05:17:49+00:00</updated>
+			<updated>2024-06-01T05:16:11+00:00</updated>
 		</source>
 	</entry>
 
 	<entry>
 		<title type="html">Lost in (Kerberos) service translation?</title>
-		<link href="https://vda.li/en/posts/2019/03/24/Kerberos-host-to-realm-translation/"/>
-		<id>https://vda.li/en/posts/2019/03/24/Kerberos-host-to-realm-translation/</id>
+		<link href="https://vda.li/posts/2019/03/24/Kerberos-host-to-realm-translation/"/>
+		<id>https://vda.li/posts/2019/03/24/Kerberos-host-to-realm-translation/</id>
 		<updated>2019-03-24T07:13:00+00:00</updated>
 		<content type="html">&lt;p&gt;A year ago Brian J. Atkisson from Red Hat IT filed &lt;a href=&quot;https://bugzilla.redhat.com/show_bug.cgi?id=1561584&quot;&gt;a bug&lt;/a&gt; against FreeIPA asking to remove a default &lt;code&gt;[domain_realm]&lt;/code&gt; mapping section from the &lt;code&gt;krb5.conf&lt;/code&gt; configuration file generated during installation of a FreeIPA client. The bug is still open and I’d like to use this opportunity to discuss some less known aspects of a Kerberos service principal resolution.&lt;/p&gt;
 
@@ -4341,7 +4583,7 @@ for the right realm name. Remember that Kerberos realm is case-sensitive and alm
 			<subtitle type="html">Identity management chaos or a development of a fun</subtitle>
 			<link rel="self" href="https://vda.li/en/freeipa.xml"/>
 			<id>https://vda.li/en/freeipa.xml</id>
-			<updated>2024-05-31T05:17:50+00:00</updated>
+			<updated>2024-06-01T05:16:12+00:00</updated>
 		</source>
 	</entry>
 
@@ -4359,14 +4601,14 @@ for the right realm name. Remember that Kerberos realm is case-sensitive and alm
 			<title type="html">freeipa – jhrozek</title>
 			<link rel="self" href="https://jhrozek.wordpress.com/tag/freeipa,sssd,ldap,idm/feed/"/>
 			<id>https://jhrozek.wordpress.com/tag/freeipa,sssd,ldap,idm/feed/</id>
-			<updated>2024-05-31T05:17:51+00:00</updated>
+			<updated>2024-06-01T05:16:13+00:00</updated>
 		</source>
 	</entry>
 
 	<entry>
 		<title type="html">FOSDEM 2018 IAM devroom</title>
-		<link href="https://vda.li/en/posts/2017/12/21/FOSDEM-2018-IAM-devroom/"/>
-		<id>https://vda.li/en/posts/2017/12/21/FOSDEM-2018-IAM-devroom/</id>
+		<link href="https://vda.li/posts/2017/12/21/FOSDEM-2018-IAM-devroom/"/>
+		<id>https://vda.li/posts/2017/12/21/FOSDEM-2018-IAM-devroom/</id>
 		<updated>2017-12-21T10:35:00+00:00</updated>
 		<content type="html">&lt;p&gt;&lt;a href=&quot;https://www.fosdem.org/2018/&quot;&gt;FOSDEM&lt;/a&gt; is one of largest free software
 conferences in Europe. It is run by volunteers for volunteers and since 2001
@@ -4433,7 +4675,7 @@ be in person at FOSDEM, streaming will be available too.&lt;/p&gt;
 			<subtitle type="html">Identity management chaos or a development of a fun</subtitle>
 			<link rel="self" href="https://vda.li/en/freeipa.xml"/>
 			<id>https://vda.li/en/freeipa.xml</id>
-			<updated>2024-05-31T05:17:50+00:00</updated>
+			<updated>2024-06-01T05:16:12+00:00</updated>
 		</source>
 	</entry>
 
@@ -4478,7 +4720,7 @@ error=&quot;undefined method `[]' for nil:NilClass&quot; plugin_id=&quot;object:
 			<subtitle type="html">Nunc Fluens - LiveJournal.com</subtitle>
 			<link rel="self" href="https://richmegginson.livejournal.com/data/rss/"/>
 			<id>https://richmegginson.livejournal.com/data/rss/</id>
-			<updated>2024-05-31T05:17:57+00:00</updated>
+			<updated>2024-06-01T05:16:19+00:00</updated>
 		</source>
 	</entry>
 
@@ -4497,7 +4739,7 @@ error=&quot;undefined method `[]' for nil:NilClass&quot; plugin_id=&quot;object:
 			<subtitle type="html">Random Things</subtitle>
 			<link rel="self" href="https://strikerttd.wordpress.com/tag/freeipa,sssd,ldap,idm/feed/"/>
 			<id>https://strikerttd.wordpress.com/tag/freeipa,sssd,ldap,idm/feed/</id>
-			<updated>2024-05-31T05:17:59+00:00</updated>
+			<updated>2024-06-01T05:16:21+00:00</updated>
 		</source>
 	</entry>
 
@@ -4650,14 +4892,14 @@ probe sdap_search_send = process(&lt;span class=&quot;hljs-string&quot;&gt;&quot
 			<title type="html">Justintime Blog</title>
 			<link rel="self" href="http://justin-stephenson.blogspot.com/feeds/posts/default?alt=rss"/>
 			<id>tag:blogger.com,1999:blog-8317082414319754746</id>
-			<updated>2024-05-31T05:17:52+00:00</updated>
+			<updated>2024-06-01T05:16:13+00:00</updated>
 		</source>
 	</entry>
 
 	<entry>
 		<title type="html">How to debug FreeIPA privilege separation issues</title>
-		<link href="https://vda.li/en/posts/2017/04/28/FreeIPA-Debugging-Privilege-Separation/"/>
-		<id>https://vda.li/en/posts/2017/04/28/FreeIPA-Debugging-Privilege-Separation/</id>
+		<link href="https://vda.li/posts/2017/04/28/FreeIPA-Debugging-Privilege-Separation/"/>
+		<id>https://vda.li/posts/2017/04/28/FreeIPA-Debugging-Privilege-Separation/</id>
 		<updated>2017-04-28T19:00:00+00:00</updated>
 		<content type="html">&lt;p&gt;FreeIPA 4.5 has a lot of internal changes. A server side of the FreeIPA framework now runs in a privilege separation mode. This improves security of FreeIPA management operations but complicates debugging of the server. During FreeIPA 4.5 development phase Simo Sorce and I spent a lot of time debugging regressions and decided to document how we log events and how to debug server side operations. As result, &lt;a href=&quot;https://vda.li/en/docs/freeipa-debug-privsep/&quot;&gt;this article&lt;/a&gt; details on what privilege separation means in FreeIPA management framework context and how to debug it.&lt;/p&gt;</content>
 		<author>
@@ -4669,7 +4911,7 @@ probe sdap_search_send = process(&lt;span class=&quot;hljs-string&quot;&gt;&quot
 			<subtitle type="html">Identity management chaos or a development of a fun</subtitle>
 			<link rel="self" href="https://vda.li/en/freeipa.xml"/>
 			<id>https://vda.li/en/freeipa.xml</id>
-			<updated>2024-05-31T05:17:50+00:00</updated>
+			<updated>2024-06-01T05:16:12+00:00</updated>
 		</source>
 	</entry>
 
@@ -4729,7 +4971,7 @@ probe sdap_search_send = process(&lt;span class=&quot;hljs-string&quot;&gt;&quot
 			<subtitle type="html">Nunc Fluens - LiveJournal.com</subtitle>
 			<link rel="self" href="https://richmegginson.livejournal.com/data/rss/"/>
 			<id>https://richmegginson.livejournal.com/data/rss/</id>
-			<updated>2024-05-31T05:17:57+00:00</updated>
+			<updated>2024-06-01T05:16:19+00:00</updated>
 		</source>
 	</entry>
 
@@ -4758,28 +5000,7 @@ children. Also, his wife tolerates him.&lt;/p&gt;</content>
 			<subtitle type="html">Recent content on Nathaniel McCallum</subtitle>
 			<link rel="self" href="https://npmccallum.gitlab.io/index.xml"/>
 			<id>https://npmccallum.gitlab.io/index.xml</id>
-			<updated>2024-05-31T05:17:53+00:00</updated>
-		</source>
-	</entry>
-
-	<entry>
-		<title type="html">FreeIPA JSON-RPC API article</title>
-		<link href="https://vda.li/en/posts/2016/11/02/FreeIPA-JSON-RPC-API-article/"/>
-		<id>https://vda.li/en/posts/2016/11/02/FreeIPA-JSON-RPC-API-article/</id>
-		<updated>2016-11-02T14:00:00+00:00</updated>
-		<content type="html">&lt;p&gt;FreeIPA Web UI provides a browser for discovering application programming interface (API) since version FreeIPA 4.2. However, the API itself is not yet officially supported and there is no documentation on how to access it. Some time ago I wrote a blog post detailing on how to access the API from an external client, like &lt;code&gt;curl&lt;/code&gt; utility. &lt;a href=&quot;https://vda.li/en/posts/2015/05/28/talking-to-freeipa-api-with-sessions/&quot;&gt;The blog post&lt;/a&gt; was quite popular and allowed to create bindings to FreeIPA API in Perl and other languages. However, the blog post assumed you know what you are doing. In order to help those starting from scratch, I wrote a larger article, &lt;a href=&quot;https://vda.li/en/docs/freeipa-management-in-a-nutshell&quot;&gt;FreeIPA management API a nutshell&lt;/a&gt;.&lt;/p&gt;
-
-&lt;p&gt;The article is available in a new documentation section so that it stays independent of the blog. I plan to extend the API documentation and add more details later. The document assumes you are using FreeIPA 4.4 or later which is available in upcoming Fedora 25 and RHEL 7.3 releases.&lt;/p&gt;</content>
-		<author>
-			<name>Alexander Bokovoy</name>
-			<uri>https://vda.li/en/</uri>
-		</author>
-		<source>
-			<title type="html">Far away to be identical</title>
-			<subtitle type="html">Identity management chaos or a development of a fun</subtitle>
-			<link rel="self" href="https://vda.li/en/freeipa.xml"/>
-			<id>https://vda.li/en/freeipa.xml</id>
-			<updated>2024-05-31T05:17:50+00:00</updated>
+			<updated>2024-06-01T05:16:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -4819,7 +5040,7 @@ all the talks available online.&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -4837,7 +5058,7 @@ all the talks available online.&lt;/p&gt;</content>
 			<title type="html">SSSD – preichl</title>
 			<link rel="self" href="https://preichl.wordpress.com/tag/sssd/feed/"/>
 			<id>https://preichl.wordpress.com/tag/sssd/feed/</id>
-			<updated>2024-05-31T05:17:53+00:00</updated>
+			<updated>2024-06-01T05:16:15+00:00</updated>
 		</source>
 	</entry>
 
@@ -4899,7 +5120,7 @@ drop me a note.&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -5029,7 +5250,7 @@ servers.&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -5121,7 +5342,7 @@ on after lunch ...&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -5167,7 +5388,7 @@ improve its use and usability.&lt;p&gt;&lt;/p&gt;&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -5394,7 +5615,7 @@ of the Kerberos protocol.&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -5519,7 +5740,7 @@ HTTPS at least.&lt;/p&gt;
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -5632,7 +5853,7 @@ Evolution)&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -5701,7 +5922,7 @@ fun and very productive time, what more can you ask for as a nerd type ?&lt;/p&g
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -5742,7 +5963,7 @@ break :-) but it was exciting to work so deep into GSSAPI code.&lt;/p&gt;</conte
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -5882,7 +6103,7 @@ administrators and the risks involved in the traditional delegation scheme.&lt;/
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -6053,7 +6274,7 @@ rebasing features of git to fix whatever need fixing quite easily.&lt;/font&gt;&
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -6156,7 +6377,7 @@ stay if you want to develop core infrastructure technology.&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -6228,7 +6449,7 @@ philosophically :-)&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -6271,7 +6492,7 @@ scenario, but I still need to do some more research first.&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -6304,7 +6525,7 @@ took me a lot less than I anticipated, and I usually underestimate :-)&lt;/p&gt;
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -6355,7 +6576,7 @@ branches:
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -6393,7 +6614,7 @@ somewhere too …)&lt;/p&gt;</content>
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -6432,7 +6653,7 @@ work-related projects, so it may take quite some time or forever ...&lt;/p&gt;</
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -6460,7 +6681,7 @@ to have home made pizza.&lt;/p&gt;
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
@@ -6558,7 +6779,7 @@ ago.&lt;/p&gt;
 			<subtitle type="html">No good deeds goes unpunished</subtitle>
 			<link rel="self" href="https://ssimo.org/blog/blog.atom"/>
 			<id>https://ssimo.org/blog/atom</id>
-			<updated>2024-05-31T05:17:58+00:00</updated>
+			<updated>2024-06-01T05:16:20+00:00</updated>
 		</source>
 	</entry>
 
