@@ -9,9 +9,10 @@
 
 <item>
 	<title>Alexander Bokovoy: IPA-IPA trust progress report</title>
-	<guid>https://vda.li/posts/2024/05/31/ipa-ipa-trust-progress/</guid>
-	<link>https://vda.li/posts/2024/05/31/ipa-ipa-trust-progress/</link>
-	<description>&lt;p&gt;FreeIPA and SSSD teams are working to enable IPA deployments to trust each other. This report outlines the progress we have so far.&lt;/p&gt;
+	<guid>https://vda.li/en/posts/2024/05/31/ipa-ipa-trust-progress/</guid>
+	<link>https://vda.li/en/posts/2024/05/31/ipa-ipa-trust-progress/</link>
+	<description>&lt;p&gt;FreeIPA and SSSD teams are working to enable IPA deployments to trust each
+other. This report outlines the progress we have so far.&lt;/p&gt;
 
 &lt;h3 id=&quot;trust-across-enterprise-domains&quot;&gt;Trust across enterprise domains&lt;/h3&gt;
 
@@ -167,7 +168,7 @@ working or not after the trust link is created. Both FreeIPA and SSSD teams can
 also work on validating that specific IPA functionality available to handle
 trusted Active Directory users and groups is also working with IPA-IPA trust.&lt;/p&gt;
 
-&lt;p&gt;I recorded a small demo on Fedora 40:&lt;/p&gt;
+&lt;p&gt;I recorded &lt;a href=&quot;https://youtube.com/watch/?v=z6o1tj9XUMQ&quot;&gt;a small demo&lt;/a&gt; on Fedora 40:&lt;/p&gt;
 &lt;div class=&quot;embed-container&quot;&gt;
  
 &lt;/div&gt;
@@ -246,8 +247,8 @@ which will be able to delegate to IPA for the user login.&lt;/p&gt;</description
 </item>
 <item>
 	<title>Alexander Bokovoy: CentOS Connect 2024 report</title>
-	<guid>https://vda.li/posts/2024/02/13/CentOS-Connect-report/</guid>
-	<link>https://vda.li/posts/2024/02/13/CentOS-Connect-report/</link>
+	<guid>https://vda.li/en/posts/2024/02/13/CentOS-Connect-report/</guid>
+	<link>https://vda.li/en/posts/2024/02/13/CentOS-Connect-report/</link>
 	<description>&lt;p&gt;February 1st-4th I participated in two events in Brussels: CentOS Connect and
 FOSDEM. FOSDEM is getting closer to its quarter a century anniversary next
 year. With 67 mini-conferences and another 30 events around it, it is
@@ -412,8 +413,8 @@ related to it.&lt;/p&gt;</description>
 </item>
 <item>
 	<title>Alexander Bokovoy: Multi-homed FreeIPA server investigation</title>
-	<guid>https://vda.li/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/</guid>
-	<link>https://vda.li/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/</link>
+	<guid>https://vda.li/en/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/</guid>
+	<link>https://vda.li/en/posts/2023/08/16/Support-multi-homed-FreeIPA-Server/</link>
 	<description>&lt;p&gt;Once in a while people come and ask for FreeIPA servers to work in multi-homed
 environments. A multi-homed environment in this context is a deployment where
 the same server is accessible through multiple network interfaces which connect
@@ -618,8 +619,8 @@ against other, more urging tasks, is what we need to figure first…&lt;/p&gt;</
 </item>
 <item>
 	<title>Alexander Bokovoy: Flock to Fedora 2023 report</title>
-	<guid>https://vda.li/posts/2023/08/11/Flock-report/</guid>
-	<link>https://vda.li/posts/2023/08/11/Flock-report/</link>
+	<guid>https://vda.li/en/posts/2023/08/11/Flock-report/</guid>
+	<link>https://vda.li/en/posts/2023/08/11/Flock-report/</link>
 	<description>&lt;p&gt;On August 2nd-4th, 2023, Fedora Project ran its annual contributors conference, &lt;a href=&quot;https://flocktofedora.org&quot;&gt;Flock to Fedora&lt;/a&gt;, in Cork, Ireland. After a previous successful Flock in 2019 in Budapest, Fedora contributors did not meet in person due to rough pandemia years and had created Nest with Fedora online event instead. Nest ran for three years but online meetings aren’t a full replacement for face to face collaboration. Cork’s Flock was supposed to combine both online and offline events together.&lt;/p&gt;
 
 &lt;p&gt;I have been attending and presenting at various Flock and Nest events over past seven years. I was looking forward to see and collaborate with many other project participants and users and get to know new people as well.&lt;/p&gt;
@@ -1518,8 +1519,8 @@ schema&lt;/a&gt;.&lt;/p&gt;</description>
 </item>
 <item>
 	<title>Alexander Bokovoy: FreeIPA authentication improvements and Fedora Infrastructure part 2</title>
-	<guid>https://vda.li/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra-2/</guid>
-	<link>https://vda.li/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra-2/</link>
+	<guid>https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra-2/</guid>
+	<link>https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra-2/</link>
 	<description>&lt;p&gt;This article continues the &lt;a href=&quot;https://vda.li/en/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra/&quot;&gt;discussion&lt;/a&gt;
 about FreeIPA authentication improvements and how they could benefit Fedora
 Infrastructure.&lt;/p&gt;
@@ -1647,8 +1648,8 @@ like we were all before with Linux on the desktop.&lt;/p&gt;</description>
 </item>
 <item>
 	<title>Alexander Bokovoy: FreeIPA authentication improvements and Fedora Infrastructure part 1</title>
-	<guid>https://vda.li/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra/</guid>
-	<link>https://vda.li/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra/</link>
+	<guid>https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra/</guid>
+	<link>https://vda.li/en/posts/2022/10/28/FreeIPA-Authentication-Improvements-and-Fedora-Infra/</link>
 	<description>&lt;p&gt;The Fedora project exists because of its contributors. Their contributions shape
 the landscape of Linux distributions in a direct way but they also have made a
 significant influence on the Open Source projects themselves. Fedora
@@ -4035,8 +4036,8 @@ certutil  -d . -D -n &quot;Certificate Authority - HOME.YOUNGLOGIC.NET
 </item>
 <item>
 	<title>Alexander Bokovoy: Lost in (Kerberos) service translation?</title>
-	<guid>https://vda.li/posts/2019/03/24/Kerberos-host-to-realm-translation/</guid>
-	<link>https://vda.li/posts/2019/03/24/Kerberos-host-to-realm-translation/</link>
+	<guid>https://vda.li/en/posts/2019/03/24/Kerberos-host-to-realm-translation/</guid>
+	<link>https://vda.li/en/posts/2019/03/24/Kerberos-host-to-realm-translation/</link>
 	<description>&lt;p&gt;A year ago Brian J. Atkisson from Red Hat IT filed &lt;a href=&quot;https://bugzilla.redhat.com/show_bug.cgi?id=1561584&quot;&gt;a bug&lt;/a&gt; against FreeIPA asking to remove a default &lt;code&gt;[domain_realm]&lt;/code&gt; mapping section from the &lt;code&gt;krb5.conf&lt;/code&gt; configuration file generated during installation of a FreeIPA client. The bug is still open and I’d like to use this opportunity to discuss some less known aspects of a Kerberos service principal resolution.&lt;/p&gt;
 
 &lt;p&gt;When an application uses Kerberos to authenticate to a remote service, it needs to talk to a Kerberos key distribution center (KDC) to obtain a service ticket to that remote service. There are multiple ways how an application could construct a name of a service but in a simplistic view it boils down to getting a remote service host name and attaching it to a remote service type name. Type names are customary and really depend on an established tradition for a protocol in use. For example, browsers universally assume that a component &lt;code&gt;HTTP/&lt;/code&gt; is used in the service name; to authenticate to &lt;code&gt;www.example.com&lt;/code&gt; server they would ask a KDC a service ticket to &lt;code&gt;HTTP/www.example.com&lt;/code&gt; principal. When an LDAP client talks to an LDAP server &lt;code&gt;ldap.example.com&lt;/code&gt; and uses SASL GSSAPI authentication, it will ask KDC for a service ticket to &lt;code&gt;ldap/ldap.example.com&lt;/code&gt;. Sometimes these assumptions are written down in a corresponding RFC document, sometimes not, but they assume both client and server know what they are doing.&lt;/p&gt;
@@ -4318,8 +4319,8 @@ for the right realm name. Remember that Kerberos realm is case-sensitive and alm
 </item>
 <item>
 	<title>Alexander Bokovoy: FOSDEM 2018 IAM devroom</title>
-	<guid>https://vda.li/posts/2017/12/21/FOSDEM-2018-IAM-devroom/</guid>
-	<link>https://vda.li/posts/2017/12/21/FOSDEM-2018-IAM-devroom/</link>
+	<guid>https://vda.li/en/posts/2017/12/21/FOSDEM-2018-IAM-devroom/</guid>
+	<link>https://vda.li/en/posts/2017/12/21/FOSDEM-2018-IAM-devroom/</link>
 	<description>&lt;p&gt;&lt;a href=&quot;https://www.fosdem.org/2018/&quot;&gt;FOSDEM&lt;/a&gt; is one of largest free software
 conferences in Europe. It is run by volunteers for volunteers and since 2001
 gathers together more than 8000 people every year. Sure, during first years
@@ -4562,8 +4563,8 @@ probe sdap_search_send = process(&lt;span class=&quot;hljs-string&quot;&gt;&quot
 </item>
 <item>
 	<title>Alexander Bokovoy: How to debug FreeIPA privilege separation issues</title>
-	<guid>https://vda.li/posts/2017/04/28/FreeIPA-Debugging-Privilege-Separation/</guid>
-	<link>https://vda.li/posts/2017/04/28/FreeIPA-Debugging-Privilege-Separation/</link>
+	<guid>https://vda.li/en/posts/2017/04/28/FreeIPA-Debugging-Privilege-Separation/</guid>
+	<link>https://vda.li/en/posts/2017/04/28/FreeIPA-Debugging-Privilege-Separation/</link>
 	<description>&lt;p&gt;FreeIPA 4.5 has a lot of internal changes. A server side of the FreeIPA framework now runs in a privilege separation mode. This improves security of FreeIPA management operations but complicates debugging of the server. During FreeIPA 4.5 development phase Simo Sorce and I spent a lot of time debugging regressions and decided to document how we log events and how to debug server side operations. As result, &lt;a href=&quot;https://vda.li/en/docs/freeipa-debug-privsep/&quot;&gt;this article&lt;/a&gt; details on what privilege separation means in FreeIPA management framework context and how to debug it.&lt;/p&gt;</description>
 	<pubDate>Fri, 28 Apr 2017 19:00:00 +0000</pubDate>
 </item>
