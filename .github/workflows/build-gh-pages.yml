@@ -13,7 +13,7 @@ jobs:
     name: build pages
     runs-on: ubuntu-latest
     container:
-      image: centos/python-27-centos7
+      image: quay.io/centos/centos:stream9
       volumes:
         - ${{ github.workspace }}:/opt/app-root/src
 

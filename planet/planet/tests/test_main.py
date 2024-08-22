@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os, sys, shutil, errno, unittest
-from ConfigParser import ConfigParser
-from StringIO import StringIO
+from configparser import ConfigParser
+from io import StringIO
 import planet
 
 class MainTest(unittest.TestCase):
@@ -52,7 +52,7 @@ name = Mary
             path = os.path.join(basedir, file + '.tmplc')
             try:
                 os.remove(path)
-            except OSError, e:
+            except OSError as e:
                 # we don't care about the file not being there, we care about
                 # everything else
                 if e.errno != errno.ENOENT:

@@ -90,7 +90,7 @@ if __name__ == '__main__':
 
 # Triggered by Amazon AWS
 def handler(event, context):
-    print("Run FreeIPA OCP Lambda", event, context)
+    print(("Run FreeIPA OCP Lambda", event, context))
     run_scripts(debug=False)
     print("FreeIPA OCP Lambda finished")
     return {'message': "FreeIPA OCP Lambda sucessful"}

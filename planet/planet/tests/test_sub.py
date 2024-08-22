@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os, glob, unittest
-from ConfigParser import ConfigParser
-from StringIO import StringIO
+from configparser import ConfigParser
+from io import StringIO
 import planet
 
 class SubTest(unittest.TestCase):
@@ -41,7 +41,7 @@ name = Test Feed
         self.my_planet.run("test", "http://example.com", [], 0)
         channels, channels_list = self.my_planet.gather_channel_info()
 
-        channel = channels.keys()[0]
+        channel = list(channels.keys())[0]
         channel.url = 'planet/tests/data/after.atom'
         os.link('planet/tests/data/cache/planet,tests,data,before.atom',
                 'planet/tests/data/cache/planet,tests,data,after.atom')
@@ -59,8 +59,8 @@ name = Test Feed
         self.my_planet.run("test", "http://example.com", [], 0)
 
         channels, channels_list = self.my_planet.gather_channel_info()
-        channel = channels.keys()[0]
-        item=channel._items.values()[0]
+        channel = list(channels.keys())[0]
+        item=list(channel._items.values())[0]
         item.set_as_date('date',(2003, 12, 13, 18, 30, 2, 5, 347, 0))
 
         channel.url = 'planet/tests/data/after.rss'

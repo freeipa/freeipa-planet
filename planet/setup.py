@@ -7,7 +7,7 @@ from distutils.core import setup
 from planet import __version__ as VERSION
 from planet import __license__ as LICENSE
 
-if 'PLANET_VERSION' in os.environ.keys():
+if 'PLANET_VERSION' in list(os.environ.keys()):
     VERSION = os.environ['PLANET_VERSION']
 
 setup(name="planet",

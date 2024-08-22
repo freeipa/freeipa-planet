@@ -2,7 +2,7 @@
 import glob, trace, unittest
 
 # find all of the planet test modules
-modules = map(trace.fullmodname, glob.glob('planet/tests/test_*.py'))
+modules = list(map(trace.fullmodname, glob.glob('planet/tests/test_*.py')))
 
 # load all of the tests into a suite
 suite = unittest.TestLoader().loadTestsFromNames(modules)

@@ -60,14 +60,14 @@ class CachedInfo:
         else:
             keys_key = self._id
 
-        if self._cache.has_key(keys_key):
+        if keys_key in self._cache:
             keys = self._cache[keys_key].split(" ")
         else:
             return
 
         for key in keys:
             cache_key = self.cache_key(key)
-            if not self._cached.has_key(key) or self._cached[key]:
+            if key not in self._cached or self._cached[key]:
                 # Key either hasn't been loaded, or is one for the cache
                 self._value[key] = self._cache[cache_key]
                 self._type[key] = self._cache[cache_key + " type"]
@@ -78,10 +78,10 @@ class CachedInfo:
         self.cache_clear(sync=0)
 
         keys = []
-        for key in self.keys():
+        for key in list(self.keys()):
             cache_key = self.cache_key(key)
             if not self._cached[key]:
-                if self._cache.has_key(cache_key):
+                if cache_key in self._cache:
                     # Non-cached keys need to be cleared
                     del(self._cache[cache_key])
                     del(self._cache[cache_key + " type"])
@@ -107,7 +107,7 @@ class CachedInfo:
         else:
             keys_key = self._id
 
-        if self._cache.has_key(keys_key):
+        if keys_key in self._cache:
             keys = self._cache[keys_key].split(" ")
             del(self._cache[keys_key])
         else:
@@ -124,7 +124,7 @@ class CachedInfo:
     def has_key(self, key):
         """Check whether the key exists."""
         key = key.replace(" ", "_")
-        return self._value.has_key(key)
+        return key in self._value
 
     def key_type(self, key):
         """Return the key type."""
@@ -196,8 +196,8 @@ class CachedInfo:
     def get_as_string(self, key):
         """Return the key as a string value."""
         key = key.replace(" ", "_")
-        if not self.has_key(key):
-            raise KeyError, key
+        if key not in self:
+            raise KeyError(key)
 
         return self._value[key]
 
@@ -216,8 +216,8 @@ class CachedInfo:
     def get_as_date(self, key):
         """Return the key as a date value."""
         key = key.replace(" ", "_")
-        if not self.has_key(key):
-            raise KeyError, key
+        if key not in self:
+            raise KeyError(key)
 
         value = self._value[key]
         return tuple([ int(i) for i in value.split(" ") ])
@@ -235,16 +235,16 @@ class CachedInfo:
     def get_as_null(self, key):
         """Return the key as the null value."""
         key = key.replace(" ", "_")
-        if not self.has_key(key):
-            raise KeyError, key
+        if key not in self:
+            raise KeyError(key)
 
         return None
 
     def del_key(self, key):
         """Delete the given key."""
         key = key.replace(" ", "_")
-        if not self.has_key(key):
-            raise KeyError, key
+        if key not in self:
+            raise KeyError(key)
 
         del(self._value[key])
         del(self._type[key])
@@ -252,11 +252,11 @@ class CachedInfo:
 
     def keys(self):
         """Return the list of cached keys."""
-        return self._value.keys()
+        return list(self._value.keys())
 
     def __iter__(self):
         """Iterate the cached keys."""
-        return iter(self._value.keys())
+        return iter(list(self._value.keys()))
 
     # Special methods
     __contains__ = has_key
@@ -272,10 +272,10 @@ class CachedInfo:
             self.set(key, value)
 
     def __getattr__(self, key):
-        if self.has_key(key):
+        if key in self:
             return self.get(key)
         else:
-            raise AttributeError, key
+            raise AttributeError(key)
 
 
 def filename(directory, filename):
@@ -293,13 +293,13 @@ def filename(directory, filename):
 
 def utf8(value):
     """Return the value as a UTF-8 string."""
-    if type(value) == type(u''):
+    if type(value) == type(''):
         return value.encode("utf-8")
     else:
         try:
-            return unicode(value, "utf-8").encode("utf-8")
+            return str(value, "utf-8").encode("utf-8")
         except UnicodeError:
             try:
-                return unicode(value, "iso-8859-1").encode("utf-8")
+                return str(value, "iso-8859-1").encode("utf-8")
             except UnicodeError:
-                return unicode(value, "ascii", "replace").encode("utf-8")
+                return str(value, "ascii", "replace").encode("utf-8")
