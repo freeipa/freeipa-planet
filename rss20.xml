@@ -8,6 +8,13 @@
 	<description>FreeIPA Identity Management planet - technical blogs - http://planet.freeipa.org/</description>
 
 <item>
+	<title>Rob Crittenden: Trying a new PKCS#11 driver: kryoptic</title>
+	<guid>http://rcritten.wordpress.com/?p=523</guid>
+	<link></link>
+	<description>Theoretically any PKCS#11 driver should work to expose tokens to IPA for HSM support. But things are never that easy. Each implementation has its own quirks and design decisions. kryoptic is a relatively new and still under development PKCS#11 soft token driver written in Rust. I wanted to give it a try to see if &amp;#8230; &lt;a href=&quot;https://rcritten.wordpress.com/2024/10/01/trying-a-new-pkcs11-driver-kryoptic/&quot; class=&quot;more-link&quot;&gt;Continue reading &lt;span class=&quot;screen-reader-text&quot;&gt;Trying a new PKCS#11 driver: kryoptic&lt;/span&gt; &lt;span class=&quot;meta-nav&quot;&gt;&amp;#8594;&lt;/span&gt;&lt;/a&gt;</description>
+	<pubDate>Tue, 01 Oct 2024 19:43:29 +0000</pubDate>
+</item>
+<item>
 	<title>Alexander Bokovoy: IPA-IPA trust progress report</title>
 	<guid>https://vda.li/en/posts/2024/05/31/ipa-ipa-trust-progress/</guid>
 	<link>https://vda.li/en/posts/2024/05/31/ipa-ipa-trust-progress/</link>
@@ -237,13 +244,6 @@ scopes for authentication/ID mapping, etc.&lt;/p&gt;
 methods for IPA Web UI and applications on the enrolled systems like Cockpit
 which will be able to delegate to IPA for the user login.&lt;/p&gt;</description>
 	<pubDate>Fri, 31 May 2024 09:30:00 +0000</pubDate>
-</item>
-<item>
-	<title>Rob Crittenden: Understanding 389-ds access logging</title>
-	<guid>http://rcritten.wordpress.com/?p=460</guid>
-	<link></link>
-	<description>The 389-ds access logs write multiple lines per connection. The contents of the logging will vary in particular based on the bind type (simple, over TLS, GSSAPI, etc). Each line will typically consist of the date, a connection id, the operation and the result. Because there may be simultaneous connections their operations are likely to &amp;#8230; &lt;a href=&quot;https://rcritten.wordpress.com/2024/02/15/understanding-389-ds-access-logging/&quot; class=&quot;more-link&quot;&gt;Continue reading &lt;span class=&quot;screen-reader-text&quot;&gt;Understanding 389-ds access logging&lt;/span&gt; &lt;span class=&quot;meta-nav&quot;&gt;&amp;#8594;&lt;/span&gt;&lt;/a&gt;</description>
-	<pubDate>Thu, 15 Feb 2024 18:38:03 +0000</pubDate>
 </item>
 <item>
 	<title>Alexander Bokovoy: CentOS Connect 2024 report</title>
