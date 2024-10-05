@@ -13,7 +13,7 @@
 
 	<items>
 		<rdf:Seq>
-			<rdf:li rdf:resource="http://rcritten.wordpress.com/?p=523" />
+			<rdf:li rdf:resource="http://rcritten.wordpress.com/?p=536" />
 			<rdf:li rdf:resource="https://vda.li/en/posts/2024/05/31/ipa-ipa-trust-progress/" />
 			<rdf:li rdf:resource="https://vda.li/en/posts/2024/02/13/CentOS-Connect-report/" />
 			<rdf:li rdf:resource="http://floblanc.wordpress.com/?p=1730" />
@@ -70,11 +70,11 @@
 	</items>
 </channel>
 
-<item rdf:about="http://rcritten.wordpress.com/?p=523">
-	<title>Rob Crittenden: Trying a new PKCS#11 driver: kryoptic</title>
+<item rdf:about="http://rcritten.wordpress.com/?p=536">
+	<title>Rob Crittenden: Introduction to HSM tokens</title>
 	<link></link>
-	<content:encoded>Theoretically any PKCS#11 driver should work to expose tokens to IPA for HSM support. But things are never that easy. Each implementation has its own quirks and design decisions. kryoptic is a relatively new and still under development PKCS#11 soft token driver written in Rust. I wanted to give it a try to see if &amp;#8230; &lt;a href=&quot;https://rcritten.wordpress.com/2024/10/01/trying-a-new-pkcs11-driver-kryoptic/&quot; class=&quot;more-link&quot;&gt;Continue reading &lt;span class=&quot;screen-reader-text&quot;&gt;Trying a new PKCS#11 driver: kryoptic&lt;/span&gt; &lt;span class=&quot;meta-nav&quot;&gt;&amp;#8594;&lt;/span&gt;&lt;/a&gt;</content:encoded>
-	<dc:date>2024-10-01T19:43:29+00:00</dc:date>
+	<content:encoded>Introduction A hardware security module (HSM) is a device that provides physical and tamper-proof security for sensitive data. It is used to provision cryptographic keys. These keys cannot leave the device. IPA supports two which communicate using the PKCS#11 standard. Because they use PKCS#11 it is possible to simulate them in software. One way is &amp;#8230; &lt;a href=&quot;https://rcritten.wordpress.com/2024/10/04/introduction-to-hsm-tokens/&quot; class=&quot;more-link&quot;&gt;Continue reading &lt;span class=&quot;screen-reader-text&quot;&gt;Introduction to HSM tokens&lt;/span&gt; &lt;span class=&quot;meta-nav&quot;&gt;&amp;#8594;&lt;/span&gt;&lt;/a&gt;</content:encoded>
+	<dc:date>2024-10-04T18:26:57+00:00</dc:date>
 </item>
 <item rdf:about="https://vda.li/en/posts/2024/05/31/ipa-ipa-trust-progress/">
 	<title>Alexander Bokovoy: IPA-IPA trust progress report</title>
